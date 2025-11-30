@@ -1,0 +1,40 @@
+# Auto detect text files and normalize line endings to LF
+* text=auto
+
+# Source code
+*.cs diff=csharp merge=union
+*.js diff=javascript
+*.py diff=python
+*.sql diff=sql
+*.json diff=json
+*.yml diff=yaml
+*.yaml diff=yaml
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+
+# Scripts
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Windows specific
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Docker
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.db binary
+*.sqlite binary
