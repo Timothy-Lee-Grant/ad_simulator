@@ -79,3 +79,45 @@ CREATE INDEX idx_events_type ON events_log(event_type);
 
 
 -- test data insertion 
+
+-- Seed Data: Create Sample Campaigns
+INSERT INTO campaigns (name, advertiser_id, status, cpm_bid, daily_budget, lifetime_budget)
+VALUES
+  (
+    'TechGear Banner Campaign',
+    gen_random_uuid(),
+    'active',
+    2.50,
+    1000.00,
+    50000.00
+  ),
+  (
+    'FashionBrand Mobile Campaign',
+    gen_random_uuid(),
+    'active',
+    3.00,
+    1500.00,
+    75000.00
+  ),
+  (
+    'GameStudio App Install Campaign',
+    gen_random_uuid(),
+    'paused',
+    1.80,
+    500.00,
+    25000.00
+  );
+
+-- Add targeting rules for first campaign (TechGear)
+INSERT INTO campaign_targeting_rules (campaign_id, rule_type, rule_value)
+SELECT id, 'country', 'US' FROM campaigns WHERE name = 'TechGear Banner Campaign'
+UNION ALL
+SELECT id, 'device_type', 'desktop' FROM campaigns WHERE name = 'TechGear Banner Campaign';
+
+-- Create sample ads for campaigns
+INSERT INTO ads (campaign_id, title, image_url, redirect_url)
+SELECT id, 'Check Out TechGear Pro', 'https://cdn.example.com/techgear-pro.jpg', 'https://techgear.example.com/pro'
+FROM campaigns WHERE name = 'TechGear Banner Campaign'
+UNION ALL
+SELECT id, 'Latest Fashion Trends', 'https://cdn.example.com/fashion-banner.jpg', 'https://fashionbrand.example.com/new'
+FROM campaigns WHERE name = 'FashionBrand Mobile Campaign';
