@@ -13,6 +13,8 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+bin/
+obj/
 
 # Visual Studio cache/options
 .vs/
@@ -22,6 +24,7 @@ bld/
 *.userosscache
 *.sln.docstates
 *.sln.iml
+*.sln.user
 
 # Visual Studio Code
 .vscode/*
@@ -68,6 +71,7 @@ appsettings.*.local.json
 # Docker
 docker-compose.override.yml
 .dockerignore
+.env.local
 
 # OS
 .DS_Store
@@ -134,3 +138,6 @@ site/
 
 # JetBrains
 .fleet/
+
+## Database
+pgdata/
