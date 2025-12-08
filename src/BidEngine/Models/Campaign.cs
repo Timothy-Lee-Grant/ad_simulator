@@ -1,7 +1,7 @@
 using System;
 
 namespace BidEngine.Models;
-
+//testing connectino with desktop computer to remote repo.
 /*
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
