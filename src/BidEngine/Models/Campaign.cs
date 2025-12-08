@@ -1,7 +1,7 @@
 using System;
 
 namespace BidEngine.Models;
-//testing connectino with desktop computer to remote repo.
+
 /*
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
@@ -64,7 +64,7 @@ public class Campaign
 
     public bool CanServe =>
     Status == "active" &&
-    DailyBudget < SpentToday &&
+    DailyBudget > SpentToday &&
     (LifetimeBudget == null || LifetimeBudget < LifetimeSpent.Value);
 
 }
@@ -101,7 +101,7 @@ CREATE TABLE campaign_targeting_rules(
     UNIQUE (campaign_id, rule_type, rule_value)
 );
 */
-public class CampaignRules
+public class TargetingRule
 {
     public Guid Id {get; set;}
     public Guid CampaignId {get; set;}

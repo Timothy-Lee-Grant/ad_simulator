@@ -19,7 +19,7 @@ CREATE TABLE campaigns(
 );
 
 -- Add targeting rules for first campaign (TechGear)
-CREATE TABLE campaign_targeting_rules(
+CREATE TABLE targeting_rules(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
     rule_type VARCHAR(50) NOT NULL,
@@ -68,8 +68,8 @@ CREATE TABLE events_log (
 -- need to investigate 
 CREATE INDEX idx_campaigns_advertiser ON campaigns(advertiser_id);
 CREATE INDEX idx_campaigns_status ON campaigns(status);
-CREATE INDEX idx_targeting_campaign ON campaign_targeting_rules(campaign_id);
-CREATE INDEX idx_targeting_type ON campaign_targeting_rules(rule_type);
+CREATE INDEX idx_targeting_campaign ON targeting_rules(campaign_id);
+CREATE INDEX idx_targeting_type ON targeting_rules(rule_type);
 CREATE INDEX idx_ads_campaign ON ads(campaign_id);
 CREATE INDEX idx_metrics_campaign_date ON daily_metrics(campaign_id, date);
 CREATE INDEX idx_metrics_date ON daily_metrics(date);
@@ -109,7 +109,7 @@ VALUES
   );
 
 -- Add targeting rules for first campaign (TechGear)
-INSERT INTO campaign_targeting_rules (campaign_id, rule_type, rule_value)
+INSERT INTO targeting_rules (campaign_id, rule_type, rule_value)
 SELECT id, 'country', 'US' FROM campaigns WHERE name = 'TechGear Banner Campaign'
 UNION ALL
 SELECT id, 'device_type', 'desktop' FROM campaigns WHERE name = 'TechGear Banner Campaign';
