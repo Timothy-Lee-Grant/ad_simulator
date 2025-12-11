@@ -94,5 +94,13 @@ public class CampaignCashe
         return cashedActiveCampaigns + sqlActiveCampaigns;
         */
     }
+
+    public async Task InvalidateCampaignAsync (Guid campaignId)
+    {
+        var casheKey = $"campaign::{campaignId}";
+        await _redis.KeyDeleteAsync(casheKey);
+        await _redis.KeyDeleteAsync("campaigns::active::all");
+        _logger.LogInformation("Invalidated cache for campaign {CampaignId}", campaignId);
+    }
     
 }
