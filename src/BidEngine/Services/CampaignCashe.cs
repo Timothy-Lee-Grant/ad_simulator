@@ -57,5 +57,42 @@ public class CampaignCashe
         
         return dbCampaign;
     }
+
+    /// <summary>
+    /// Get all active campaigns, checking cache first
+    /// </summary>
+    public async Task<List<Campaign>> GetActiveCampaignsAsync()
+    {
+        var casheKey = "campaigns::active::all";
+
+        var cashed = await _redis.
+            StringGetAsync(casheKey);
+
+        if (cashed.HasValue)
+        {
+            _logger.LogInformation("Cache hit for active campaigns");
+            var res = JsonSerializer.Deserialize<List<Campaign>>(cashed.ToString());
+            return res ?? new();
+        }
+
+        _logger.LogInformation("Cache miss for active campaigns, querying database");
+        var res = await _dbContext.Campaign
+            .Include(c=>c.Ads)
+            .Include(c=>c.TargetingRule)
+            .Where(c => c.Status == "active")
+            .ToListAsync();
+
+        var json = JsonSerializer.Serialize(res);
+        await _redis.StringSetAsync(casheKey, json, TimeSpan.FromSeconds(CacheTtlSeconds));
+        return res;
+        //I guess my way of doing this is not accurate....
+        /*
+        var cashedActiveCampaigns = await _redis.SomeMethod(campaign => campaign.status == "active");
+        var sqlActiveCampaigns = await _dbContext.Campaign
+            .find(c => c.status == "active");
+
+        return cashedActiveCampaigns + sqlActiveCampaigns;
+        */
+    }
     
 }
