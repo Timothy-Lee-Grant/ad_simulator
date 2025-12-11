@@ -35,8 +35,27 @@ public class CampaignCashe
 
         //if no cashe hit. need to find in sql, get campaign, store it in redis, return found object
         _logger.LogInformation("Cache miss for campaign {CampaignId}, querying database", campaignId);
+        //this entire thing simplifies to one sql statement. It will look like
+        /*
+        SELECT c.Id, c.Name, a.Id, a.CampaignId, a.Title
+        FROM Campaigns c
+        LEFT JOIN Ads a ON c.Id = a.CampaignId
+        WHERE c.Id = 1;
+
+        */
         var dbCampaign = await _dbContext.Campaigns
-            .Include(c)
+            .Include(c => c.Ads)
+            .Include(c => c.TargetingRules)
+            .FirstOrDefaultAsync(c => c.Id == campaignId);
+
+        if(dbCampaign != null)
+        {
+            //what does serialize acutally do? does it return a string or a json obect??
+            var json = JsonSerializer.Serialize(dbCampaign);
+            await _redis.StringSetAsync(cacheKey, json, TimeSpan.FromSeconds(CacheTtlSeconds));
+        }
+        
+        return dbCampaign;
     }
     
 }
