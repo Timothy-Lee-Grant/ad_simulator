@@ -1,11 +1,4 @@
 
-
-
-
-
-
-
-
 using BidEngine.Data;
 using BidEngine.Models;
 using StackExchange.Redis;
