@@ -29,6 +29,14 @@ public class BidRequest
     /// User interests or demographic data
     /// </summary>
     public Dictionary<string, object> UserAttributes { get; set; } = new();
+
+    public int Age {get; set;}
+
+    //I am using the term AssumedGender to indicate that the use did not explicitly give this information, but though the algorithm of 
+    // observing the user's behavior (such as other watched videos, comments,ect.) it is GUESSED that the user has a gender of ______.
+    //public string? AssumedGender {get; set;}
+    // I am creating a dictionary which gives the gender and the associated confidence of that guess.
+    public Dictionary<string?, int> AssumedGender {get; set;}
 }
 
 public class BidResponse
