@@ -5,14 +5,14 @@ using System.Text.Json;
 
 namespace BidEngine.Services;
 
-public class CampaignCashe
+public class CampaignCache
 {
     private readonly IDatabase _redis;
     private readonly AppDbContext _dbContext;
     private readonly ILogger<CampaignCache> _logger;
     private const int CacheTtlSeconds = 300; // 5 minutes
 
-    public void CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCashe> logger)
+    public void CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCache> logger)
     {
         _redis = db.GetDatabase();
         _dbContext = context;

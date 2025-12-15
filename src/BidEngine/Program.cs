@@ -20,7 +20,7 @@ var redis = ConnectionMultiplexer.Connect(redisConnectionString);
 builder.Services.AddSingleton(redis);
 
 //add custom services
-builder.Services.AddScoped<CampaignCashe>();
+builder.Services.AddScoped<CampaignCache>();
 builder.Services.AddScoped<BidSelector>();
 builder.Services.AddScoped<BudgetService>();
 

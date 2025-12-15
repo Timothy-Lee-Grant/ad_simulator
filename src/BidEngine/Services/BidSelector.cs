@@ -20,11 +20,11 @@ namespace BidEngine.Services;
 /// is currently being implemented as of now.)
 public class BidSelector
 {
-    private readonly CampaignCashe _cashe;
+    private readonly CampaignCache _cashe;
     private readonly ILogger<BidSelector> _logger;
     private readonly Random _random = new();
 
-    public BidSelector(CampaignCashe cashe, ILogger<BidSelector> logger)
+    public BidSelector(CampaignCache cashe, ILogger<BidSelector> logger)
     {
         _cashe = cashe;
         _logger = logger;

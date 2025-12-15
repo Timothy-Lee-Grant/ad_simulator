@@ -91,7 +91,7 @@ public class BudgetService
 
             await _dbContext.SaveChangesAsync();
 
-            var cashe = (CampaignCashe?)
+            var cashe = (CampaignCache?)
             _dbContext.GetType().Assembly
                 .GetType("BidEngine.Services.CampaignCache");
 
