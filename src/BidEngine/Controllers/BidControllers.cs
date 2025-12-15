@@ -70,7 +70,7 @@ public class BidController : ControllerBase
             }
 
             //deduct budget for winning campaign
-            var budgetDeducted = await _budgetService.DeductBudgetAsync(winningBid.CampainId, winningBid.BidPrice);
+            var budgetDeducted = await _budgetService.DeductBudgetAsync(winningBid.CampaignId, winningBid.BidPrice);
 
             if(!budgetDeducted)
             {

@@ -2,6 +2,8 @@ using BidEngine.Data;
 using BidEngine.Models;
 using StackExchange.Redis;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace BidEngine.Services;
 
@@ -12,7 +14,7 @@ public class CampaignCache
     private readonly ILogger<CampaignCache> _logger;
     private const int CacheTtlSeconds = 300; // 5 minutes
 
-    public void CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCache> logger)
+    public CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCache> logger)
     {
         _redis = db.GetDatabase();
         _dbContext = context;
@@ -71,14 +73,14 @@ public class CampaignCache
         if (cashed.HasValue)
         {
             _logger.LogInformation("Cache hit for active campaigns");
-            var res = JsonSerializer.Deserialize<List<Campaign>>(cashed.ToString());
-            return res ?? new();
+            var res1 = JsonSerializer.Deserialize<List<Campaign>>(cashed.ToString());
+            return res1 ?? new();
         }
 
         _logger.LogInformation("Cache miss for active campaigns, querying database");
-        var res = await _dbContext.Campaign
+        var res = await _dbContext.Campaigns //I initially had '_dbContext.Campaigns', but it caused an error, look into learning more about how plural is mapped with C# Tim Grant
             .Include(c=>c.Ads)
-            .Include(c=>c.TargetingRule)
+            .Include(c=>c.TargetingRules)
             .Where(c => c.Status == "active")
             .ToListAsync();
 

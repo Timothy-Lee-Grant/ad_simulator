@@ -89,7 +89,7 @@ public class BidSelector
         }
 
         //step 3 select campaign with highest cpm bid
-        var winningCampaign = eligibleCampaigns.OrderbyDecending(c=>c.CpmBid).First();
+        var winningCampaign = eligibleCampaigns.OrderByDescending(c=>c.CpmBid).First();
     
         _logger.LogInformation(
             "Campaign {CampaignId} won with CPM bid {Bid}",

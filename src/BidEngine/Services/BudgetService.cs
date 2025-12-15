@@ -2,6 +2,8 @@
 using BidEngine.Data;
 using BidEngine.Models;
 using StackExchange.Redis;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace BidEngine.Services;
 

@@ -36,12 +36,12 @@ public class BidRequest
     // observing the user's behavior (such as other watched videos, comments,ect.) it is GUESSED that the user has a gender of ______.
     //public string? AssumedGender {get; set;}
     // I am creating a dictionary which gives the gender and the associated confidence of that guess.
-    public Dictionary<string?, int> AssumedGender {get; set;}
+    public Dictionary<string, int>? AssumedGender {get; set;}
 }
 
 public class BidResponse
 {
-    public Guid CampainId {get; set;}
+    public Guid CampaignId {get; set;}
     public Guid AdId {get; set;}
     public AdContent AdContent  {get; set;} = null!;
     public decimal BidPrice  {get; set;}

@@ -46,7 +46,7 @@ if(app.Environment.IsDevelopment())
 
 //prometheus metrics endpoint
 app.UseRouting();
-app.useEndpoints(endpoints =>
+app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
     endpoints.MapMetrics();

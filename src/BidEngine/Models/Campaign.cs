@@ -65,7 +65,7 @@ public class Campaign
     public bool CanServe =>
     Status == "active" &&
     DailyBudget > SpentToday &&
-    (LifetimeBudget == null || LifetimeBudget < LifetimeSpent.Value);
+    (LifetimeBudget == null || LifetimeBudget < LifetimeSpent);
 
 }
 
@@ -83,7 +83,7 @@ public class Ad
 {
     public Guid Id {get; set;}
     public Guid CampaignId {get; set;}
-    public string Title {get; set;}
+    public string Title {get; set;} = string.Empty;
     public string ImageUrl {get; set;} = string.Empty;
     public string RedirectUrl {get; set;} = string.Empty;
     public DateTime CreatedAt {get; set;}
@@ -105,8 +105,8 @@ public class TargetingRule
 {
     public Guid Id {get; set;}
     public Guid CampaignId {get; set;}
-    public string RuleType {get; set;}
-    public string RuleValue {get; set;}
+    public string RuleType {get; set;} = string.Empty;
+    public string RuleValue {get; set;} = string.Empty;
     public DateTime CreatedAt {get; set;}
     public Campaign Campaign {get; set;} = null!;
 }

@@ -48,7 +48,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(e=>e.CampaignId);
         });
 
-        modelBuilder.Entity<TargetingRules>(entity=>
+        modelBuilder.Entity<TargetingRule>(entity=>
         {
             entity.HasKey(e=>e.Id);
             //entity.Property(e=>e.CampaignId).IsRequired();
