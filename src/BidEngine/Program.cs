@@ -15,9 +15,27 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connect
 
 
 //add redis
+/*
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "redis:6379";
 var redis = ConnectionMultiplexer.Connect(redisConnectionString);
 builder.Services.AddSingleton(redis);
+*/
+/*
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var redisConnectionString = builder.Configuration.GetConnectionString("Redis") 
+                                ?? builder.Configuration["Redis__ConnectionString"] 
+                                ?? "redis:6379";
+    return ConnectionMultiplexer.Connect(redisConnectionString);
+});
+*/
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var redisConnectionString = builder.Configuration["Redis__ConnectionString"] ?? "redis:6379";
+    return ConnectionMultiplexer.Connect(redisConnectionString);
+});
+
+
 
 //add custom services
 builder.Services.AddScoped<CampaignCache>();

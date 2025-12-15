@@ -103,5 +103,18 @@ public class BidController : ControllerBase
             return StatusCode(500, "Internal server error");
         }
     }
+
+
+    /// <summary>
+    /// GET /api/bid/test
+    /// Simple health check endpoint to verify the service is running
+    /// </summary>
+    [HttpGet("test")]
+    public ActionResult<string> Test()
+    {
+        _logger.LogInformation("Test endpoint called");
+        return Ok("BidEngine is running!");
+    }
+
     
 }
