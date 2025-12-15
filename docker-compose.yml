@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/database/migrations:/docker-entrypoint-initdb.d
@@ -76,8 +76,12 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infrastructure/monitoring:/etc/prometheus
       - prometheus_data:/prometheus
+
+    #volumes:
+    #  - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    #  - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
 
