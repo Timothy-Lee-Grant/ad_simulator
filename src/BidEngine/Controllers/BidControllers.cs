@@ -4,7 +4,7 @@ using BidEngine.Services;
 using Microsoft.AspNetCore.Mvc;
 using Prometheus;
 
-namespace BidEngine.Contrllers;
+namespace BidEngine.Controllers;
 
 /// <summary>
 /// REST API endpoint for bidding
