@@ -141,13 +141,14 @@ public class BidSelector
         var rulesByType = campaign.
             TargetingRules.GroupBy(
                 r=>r.RuleType)
-                .ToDictionary(g=>g.ToList());
+                .ToDictionary(g => g.Key, g => g.ToList());
+
 
         if(rulesByType.TryGetValue("country", out var countryRules))
         {
             if(request.CountryCode == null ||
                 !countryRules.Any(r=>r.RuleValue.Equals(
-                    CountryCode, StringComparison.OrdinalIgnoreCase
+                    request.CountryCode, StringComparison.OrdinalIgnoreCase //changed CountryCode -> request.CountryCode
                 )))
             {
                 return false;

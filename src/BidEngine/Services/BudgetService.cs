@@ -21,12 +21,14 @@ public class BudgetService
     private readonly AppDbContext _dbContext;
     private readonly IDatabase _redis;
     private readonly ILogger<BudgetService> _logger;
+    private CampaignCache _cache;
 
-    public BudgetService(AppDbContext appDbContext, IConnectionMultiplexer database, ILogger<BudgetService> logger)
+    public BudgetService(AppDbContext appDbContext, IConnectionMultiplexer database, ILogger<BudgetService> logger, CampaignCache cache) // I am adding this CampaignCache cache here to see if I can solve the problem I am experinecing where I don't think we are invalidating cashe.
     {
         _dbContext = appDbContext;
         _redis = database.GetDatabase();
         _logger = logger;
+        _cache = cache;
     }
 
     /// <summary>
@@ -92,10 +94,15 @@ public class BudgetService
             }
 
             await _dbContext.SaveChangesAsync();
-
+            /*
             var cashe = (CampaignCache?)
             _dbContext.GetType().Assembly
                 .GetType("BidEngine.Services.CampaignCache");
+            */
+            //I am seeing if I can use this line instead because I don't believe the statements above will work. Tim Grant
+            //_cache.Invalidate(campaignId);
+            await _cache.InvalidateCampaignAsync(campaignId);
+
 
             _logger.LogInformation(
                 "Deducted ${Cost} from campaign {CampaignId} (new total: ${Total})",
