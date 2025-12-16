@@ -2,6 +2,7 @@ using BidEngine.Data;
 using BidEngine.Models;
 using StackExchange.Redis;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -63,8 +64,13 @@ public class CampaignCache
 
         if(dbCampaign != null)
         {
-            //what does serialize acutally do? does it return a string or a json obect??
-            var json = JsonSerializer.Serialize(dbCampaign);
+            // Serialize with options to avoid circular reference errors
+            var options = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.IgnoreCycles
+            };
+
+            var json = JsonSerializer.Serialize(dbCampaign, options);
             await _redis.StringSetAsync(cacheKey, json, TimeSpan.FromSeconds(CacheTtlSeconds));
         }
         
@@ -95,7 +101,13 @@ public class CampaignCache
             .Where(c => c.Status == "active")
             .ToListAsync();
 
-        var json = JsonSerializer.Serialize(res);
+        // Use options to avoid circular reference serialization errors (Ads -> Campaign -> Ads)
+        var options = new JsonSerializerOptions
+        {
+            ReferenceHandler = ReferenceHandler.IgnoreCycles
+        };
+
+        var json = JsonSerializer.Serialize(res, options);
         await _redis.StringSetAsync(casheKey, json, TimeSpan.FromSeconds(CacheTtlSeconds));
         return res;
         //I guess my way of doing this is not accurate....

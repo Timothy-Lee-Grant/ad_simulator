@@ -65,7 +65,7 @@ public class Campaign
     public bool CanServe =>
     Status == "active" &&
     DailyBudget > SpentToday &&
-    (LifetimeBudget == null || LifetimeBudget < LifetimeSpent);
+    (LifetimeBudget == null || LifetimeSpent < LifetimeBudget);
 
 }
 
