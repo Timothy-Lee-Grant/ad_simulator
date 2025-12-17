@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, 'test/**' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      run_integration:
+        description: 'Run integration tests using service containers (set to true to enable)'
+        required: false
+        default: 'false'
+
+jobs:
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run unit tests
+        run: |
+          # Run tests (integration tests are skipped by default using [Fact(Skip="...")])
+          dotnet test --no-build --verbosity normal
+
+  integration-tests:
+    name: Integration tests (optional)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.run_integration == 'true' }}
+
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 5
+
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ad_sim_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 5
+
+    env:
+      REDIS_URL: redis://localhost:6379
+      POSTGRES_CONNECTION: Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=ad_sim_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for Redis and Postgres to be available..."
+          for i in {1..30}; do nc -z localhost 6379 && break || sleep 1; done
+          for i in {1..30}; do nc -z localhost 5432 && break || sleep 1; done
+
+      - name: Run integration tests
+        run: |
+          # Run only tests in the Integration namespace. If your integration tests are marked with Skip,
+          # set the Skip attribute to null/empty to enable them.
+          dotnet test --no-build --verbosity normal --filter "FullyQualifiedName~Integration"
+
+# Notes:
+# - Unit tests run on every push/PR. Integration tests are optional and can be invoked manually via "Run workflow" (set run_integration=true).
+# - The integration job uses GitHub service containers for Redis and Postgres. Adjust images and health checks as needed.
+# - If you prefer TestContainers in the test code, the integration job can be simplified to only provide docker access.
