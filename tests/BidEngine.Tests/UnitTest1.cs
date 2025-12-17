@@ -1,10 +1,15 @@
-﻿namespace BidEngine.Tests;
+﻿using System;
+using Xunit;
 
-public class UnitTest1
+namespace BidEngine.Tests
 {
-    [Fact]
-    public void Test1()
+    public class UnitTest1
     {
-
+        [Fact]
+        public void Placeholder()
+        {
+            // placeholder test to ensure test project compiles
+            Assert.True(true);
+        }
     }
 }
