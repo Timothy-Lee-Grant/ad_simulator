@@ -40,7 +40,8 @@ jobs:
       - name: Run unit tests
         run: |
           # Run tests (integration tests are skipped by default using [Fact(Skip="...")])
-          dotnet test --no-build --verbosity normal
+          # dotnet test --no-build --verbosity normal
+          dotnet test ad_simulator.sln --no-build --configuration Release --verbosity normal
 
   integration-tests:
     name: Integration tests (optional)
