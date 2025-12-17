@@ -15,17 +15,6 @@ public class CampaignCache
     private readonly ILogger<CampaignCache> _logger;
     private const int CacheTtlSeconds = 300; // 5 minutes
 
-    // Tim Grant - tried to add this to fix a problem I was experiencing, but it caused another one.
-    /*
-    public void Invalidate(Guid campaignId)
-    {
-        if (_cache.ContainsKey(campaignId))
-        {
-            _cache.Remove(campaignId);
-        }
-    }
-    */
-
     public CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCache> logger)
     {
         _redis = db.GetDatabase();
