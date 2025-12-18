@@ -58,6 +58,62 @@ public class BidSelectorTests
         res!.CampaignId.Should().Be(c2.Id);
     }
 
+    [Fact]
+    public async Task SelectWinningBidAsync_UsesVariantA_WhenExperimentReturnsA()
+    {
+        var c2 = new Campaign { Id = Guid.NewGuid(), Status = "active", CpmBid = 2m, DailyBudget = 100m, SpentToday = 0m };
+        c2.Ads.Add(new Ad { Id = Guid.NewGuid(), CampaignId = c2.Id, Title = "ad2", ImageUrl = "u", RedirectUrl = "r" });
+
+        var conn = new Mock<StackExchange.Redis.IConnectionMultiplexer>();
+        var db = new Mock<StackExchange.Redis.IDatabase>();
+        conn.Setup(c => c.GetDatabase(It.IsAny<int>(), It.IsAny<object>())).Returns(db.Object);
+        var options = new DbContextOptionsBuilder<BidEngine.Data.AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var ctx = new BidEngine.Data.AppDbContext(options);
+        ctx.Campaigns.Add(c2);
+        await ctx.SaveChangesAsync();
+
+        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
+        var experiment = new Mock<IExperimentService>();
+        experiment.Setup(e => e.GetVariant("bid-selector", It.IsAny<string>())).Returns("A");
+
+        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>(), experiment.Object);
+
+        var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
+        res.Should().NotBeNull();
+        res!.Confidence.Should().Be(0.95m);
+    }
+
+    [Fact]
+    public async Task SelectWinningBidAsync_UsesVariantB_WhenExperimentReturnsB()
+    {
+        var c2 = new Campaign { Id = Guid.NewGuid(), Status = "active", CpmBid = 2m, DailyBudget = 100m, SpentToday = 0m };
+        c2.Ads.Add(new Ad { Id = Guid.NewGuid(), CampaignId = c2.Id, Title = "ad2", ImageUrl = "u", RedirectUrl = "r" });
+
+        var conn = new Mock<StackExchange.Redis.IConnectionMultiplexer>();
+        var db = new Mock<StackExchange.Redis.IDatabase>();
+        conn.Setup(c => c.GetDatabase(It.IsAny<int>(), It.IsAny<object>())).Returns(db.Object);
+        var options = new DbContextOptionsBuilder<BidEngine.Data.AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var ctx = new BidEngine.Data.AppDbContext(options);
+        ctx.Campaigns.Add(c2);
+        await ctx.SaveChangesAsync();
+
+        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
+        var experiment = new Mock<IExperimentService>();
+        experiment.Setup(e => e.GetVariant("bid-selector", It.IsAny<string>())).Returns("B");
+
+        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>(), experiment.Object);
+
+        var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
+        res.Should().NotBeNull();
+        res!.Confidence.Should().Be(0.5m);
+    }
+
     [Fact(Skip = "Temporarily skipping because second algorithm doesn't use this same kind of logic")]
     public async Task SelectWinningBidAsync_SelectsHighestCpm_WhenMultipleEligible()
     {

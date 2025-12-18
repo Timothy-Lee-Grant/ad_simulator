@@ -23,29 +23,35 @@ public class BidSelector
     private readonly CampaignCache _cashe;
     private readonly ILogger<BidSelector> _logger;
     private readonly Random _random = new();
+    private readonly IExperimentService _experiments;
 
-    public BidSelector(CampaignCache cashe, ILogger<BidSelector> logger)
+    public BidSelector(CampaignCache cashe, ILogger<BidSelector> logger, IExperimentService experiments)
     {
         _cashe = cashe;
         _logger = logger;
+        _experiments = experiments;
     }
 
     public async Task<BidResponse?> SelectWinningBidAsync(BidRequest request)
     {
-        var adSelection = 0.7;
-        //var res = null;
-        BidResponse? res;
-        if(adSelection>0.5)
-        {
-            res = await SelectWinningBidAsyncAlgorithm1(request);
-        }
-        else
-        {
-            res = await SelectWinningBidAsyncAlgorithm2(request);
-        }
-        
+        // Determine which algorithm variant should run for this request using deterministic assignment
+        var identity = request.UserId ?? request.PlacementId ?? "anonymous";
+        var variant = _experiments.GetVariant("bid-selector", identity);
 
-        return res;
+        _logger.LogInformation("User {UserId} assigned to AB variant {Variant}", identity, variant);
+
+        // Export a simple Prometheus counter for experiment assignments (labels: experiment, variant)
+        try
+        {
+            var counter = Prometheus.Metrics.CreateCounter("ab_experiment_assignments", "A/B experiment assignment counts", new Prometheus.CounterConfiguration { LabelNames = new[] { "experiment", "variant" } });
+            counter.WithLabels("bid-selector", variant).Inc();
+        }
+        catch
+        {
+            // Metrics may be unavailable during tests; don't fail the request for metric errors
+        }
+
+        return variant == "B" ? await SelectWinningBidAsyncAlgorithm2(request) : await SelectWinningBidAsyncAlgorithm1(request);
     }
 
     /// <summary>
