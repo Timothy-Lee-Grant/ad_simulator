@@ -166,31 +166,63 @@ advertisement's information and return it back.
         //Tim Grant - As of now we have GetActiveCampaignsAsync() declared as List<Campaigns> , but what if there are no campaigns to serve? then we should get a null value???
         var activeCampaigns = await _cashe.GetActiveCampaignsAsync();
 
+        //This checks if there is a list at all but not if the list is empty (so different than python)
+        /*
         if(activeCampaigns == null)
         {
             return null;
         }
+        */
+        if(!activeCampaigns.Any())
+        {
+            return null;
+        }
+
+        var eligibleCampaigns = new List<Campaign>();
+        foreach(var campaign in activeCampaigns)
+        {
+            if(!campaign.CanServe)
+            {
+                continue;
+            }
+
+            if(!MatchesTargetingRules(campaign, request))
+            {
+                continue;
+            }
+
+            eligibleCampaigns.Add(campaign);
+        }
+
+        if(!eligibleCampaigns.Any())
+        {
+            _logger.LogWarning("SelectWinningBidAsyncAlgorithm2 was unable to find eligable Campaign");
+            return null;
+        }
+
 
 
         //My task now is to find highest advertisement which I am hoping to select and give to the user
         //Tim Grant This will be my 'algorithm' for selection
         //could use greedy algorithm where I first select the best campaign and then select the best ad from that best campaign 
         //other idea is just do a test and select a random ad, then develop greedy later (because I would need to add multipliers to my ad dataset)
-        var winningCampaign = activeCampaigns[_random.Next(0, activeCampaigns.Count)];
-
-        //check if winningCampaign is null
-        if(winningCampaign == null)
+        var winningCampaign = eligibleCampaigns[_random.Next(eligibleCampaigns.Count)];
+        /*
+        if(!winningCampaign.Any())
         {
             _logger.LogWarning("SelectWinningBidAsyncAlgorithm2 was unable to find winningCampaign and got a NULL back");
             return null;
         }
-        if(winningCampaign.Ads.Count == 0)
+        */
+
+        if(!winningCampaign.Ads.Any())
         {
             _logger.LogWarning("SelectWinningBidAsyncAlgorithm2 winningCampaign has Ads count of 0");
             return null;
         }
+
         //Now that I have a winning campaign. I need to select a winning bid
-        var winningBid = winningCampaign.Ads[_random.Next(0, winningCampaign.Ads.Count)];
+        var winningBid = winningCampaign.Ads[_random.Next(winningCampaign.Ads.Count)];
 
         /*
         public class BidResponse
@@ -203,13 +235,14 @@ advertisement's information and return it back.
 
         }
         */
+        /*
         var response = new BidResponse();
         response.CampaignId = winningCampaign.Id;
         response.AdId = winningBid.Id;
         response.AdContent = new AdContent();
-        response.BidPrice = winningCampaign.CpmBid / 1000;
+        response.BidPrice = winningCampaign.CpmBid;
         response.Confidence = 0.5; //This has not been implemented. I would need some algorithm to determine what confidence I have and use my metrics to determine this
-        
+        */
         /*
         public class AdContent
         {
@@ -222,9 +255,24 @@ advertisement's information and return it back.
         public string ImageUrl {get; set;} = string.Empty;
         public string RedirectUrl {get; set;} = string.Empty;
         */
+        /*
         response.AdContent.ImageUrl = winningBid.ImageUrl;
         response.AdContent.Title = winningBid.Title;
         response.AdContent.RedirectUrl = winningBid.RedirectUrl;
+        */
+        var response = new BidResponse
+        {
+            CampaignId = winningCampaign.Id,
+            AdId = winningBid.Id,
+            BidPrice = winningCampaign.CpmBid, // Consistent with Algorithm 1
+            Confidence = 0.5,
+            AdContent = new AdContent
+            {
+                ImageUrl = winningBid.ImageUrl,
+                Title = winningBid.Title,
+                RedirectUrl = winningBid.RedirectUrl
+            }
+        };
 
         return response;
     }
