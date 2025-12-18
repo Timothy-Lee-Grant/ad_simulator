@@ -32,7 +32,7 @@ public class BidSelector
 
     public async Task<BidResponse?> SelectWinningBidAsync(BidRequest request)
     {
-        var adSelection = 0.1;
+        var adSelection = 0.7;
         //var res = null;
         BidResponse? res;
         if(adSelection>0.5)
