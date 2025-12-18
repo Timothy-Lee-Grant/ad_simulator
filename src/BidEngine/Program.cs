@@ -27,6 +27,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 builder.Services.AddScoped<CampaignCache>();
 builder.Services.AddScoped<BidSelector>();
 builder.Services.AddScoped<BudgetService>();
+// Experiment service (deterministic, hash-based assignments)
+builder.Services.AddSingleton<IExperimentService, HashExperimentService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
