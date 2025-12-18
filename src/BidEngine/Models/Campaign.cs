@@ -89,6 +89,8 @@ public class Ad
     public DateTime CreatedAt {get; set;}
 
     public Campaign Campaign {get; set;} = null!;
+
+    //Tim Grant - In the future I need to add multipliers for each advertisement based on the targeting of that specific advertisement.
 }
 
 /*

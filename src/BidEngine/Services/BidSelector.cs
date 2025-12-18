@@ -30,10 +30,28 @@ public class BidSelector
         _logger = logger;
     }
 
+    public async Task<BidResponse?> SelectWinningBidAsync(BidRequest request)
+    {
+        var adSelection = 0.7;
+        //var res = null;
+        BidResponse? res;
+        if(adSelection>0.5)
+        {
+            res = await SelectWinningBidAsyncAlgorithm1(request);
+        }
+        else
+        {
+            res = await SelectWinningBidAsyncAlgorithm2(request);
+        }
+        
+
+        return res;
+    }
+
     /// <summary>
     /// Select the winning campaign based on bid price and targeting match
     /// </summary>
-    public async Task<BidResponse?> SelectWinningBidAsync(BidRequest request)
+    public async Task<BidResponse?> SelectWinningBidAsyncAlgorithm1(BidRequest request)
     {
         _logger.LogInformation(
             "Evaluating bids for user {UserId} on placement {PlacementId}",
@@ -123,6 +141,87 @@ public class BidSelector
                 RedirectUrl = selectedAd.RedirectUrl
             },
             Confidence = 0.95 // this will need to be updated later to match real targeting metrics
+        };
+
+        return response;
+    }
+
+    /*
+    This function will be called by the http rest controller when the client attempts to 
+    request an ad from our service.
+    Inputs: request will be the body of the http resquest which comes from the user.
+    Outputs: A newly created BidResponse which will signify the 'highest' priced advertisement
+    which our algorithm has found. The function will fill out the fields of a BidResponse with that
+    advertisement's information and return it back.
+    */
+    public async Task<BidResponse?> SelectWinningBidAsyncAlgorithm2(BidRequest request)
+    {
+        _logger.LogInformation(
+            "Evaluating bids for user {UserId} on placement {PlacementId}",
+            request.UserId,
+            request.PlacementId
+        );
+
+        //activeCampaigns will be a List<Campaigns> which are active
+        //Tim Grant - As of now we have GetActiveCampaignsAsync() declared as List<Campaigns> , but what if there are no campaigns to serve? then we should get a null value???
+        var activeCampaigns = await _cashe.GetActiveCampaignsAsync();
+
+        if(!activeCampaigns.Any())
+        {
+            return null;
+        }
+
+        var eligibleCampaigns = new List<Campaign>();
+        foreach(var campaign in activeCampaigns)
+        {
+            if(!campaign.CanServe)
+            {
+                continue;
+            }
+
+            if(!MatchesTargetingRules(campaign, request))
+            {
+                continue;
+            }
+
+            eligibleCampaigns.Add(campaign);
+        }
+
+        if(!eligibleCampaigns.Any())
+        {
+            _logger.LogWarning("SelectWinningBidAsyncAlgorithm2 was unable to find eligable Campaign");
+            return null;
+        }
+
+
+
+        //My task now is to find highest advertisement which I am hoping to select and give to the user
+        //Tim Grant This will be my 'algorithm' for selection
+        //could use greedy algorithm where I first select the best campaign and then select the best ad from that best campaign 
+        //other idea is just do a test and select a random ad, then develop greedy later (because I would need to add multipliers to my ad dataset)
+        var winningCampaign = eligibleCampaigns[_random.Next(eligibleCampaigns.Count)];
+
+        if(!winningCampaign.Ads.Any())
+        {
+            _logger.LogWarning("SelectWinningBidAsyncAlgorithm2 winningCampaign has Ads count of 0");
+            return null;
+        }
+
+        //Now that I have a winning campaign. I need to select a winning bid
+        var winningBid = winningCampaign.Ads[_random.Next(winningCampaign.Ads.Count)];
+
+        var response = new BidResponse
+        {
+            CampaignId = winningCampaign.Id,
+            AdId = winningBid.Id,
+            BidPrice = winningCampaign.CpmBid, // Consistent with Algorithm 1
+            Confidence = 0.5,
+            AdContent = new AdContent
+            {
+                ImageUrl = winningBid.ImageUrl,
+                Title = winningBid.Title,
+                RedirectUrl = winningBid.RedirectUrl
+            }
         };
 
         return response;
