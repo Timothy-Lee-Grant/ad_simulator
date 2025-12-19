@@ -1,5 +1,5 @@
 using BidEngine.Data;
-using BidEngine.Models;
+using BidEngine.Shared;
 using StackExchange.Redis;
 using System.Text.Json;
 using System.Text.Json.Serialization;

@@ -1,5 +1,5 @@
 
-using BidEngine.Models;
+using BidEngine.Shared;
 using BidEngine.Services;
 using Microsoft.AspNetCore.Mvc;
 using Prometheus;
