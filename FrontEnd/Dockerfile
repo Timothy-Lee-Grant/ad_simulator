@@ -3,7 +3,8 @@ FROM node:18-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci --silent --no-audit --no-fund
+# Use npm install when there is no package-lock.json present (npm ci requires it)
+RUN npm install --production --no-audit --no-fund
 
 COPY . .
 

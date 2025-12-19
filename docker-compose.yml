@@ -122,10 +122,9 @@ services:
       dockerfile: Dockerfile
     container_name: ads_frontend
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
-      bid-engine:
-        condition: service_healthy
+      - bid-engine
     environment:
       BID_ENGINE_URL: "http://bid-engine:8081"
 

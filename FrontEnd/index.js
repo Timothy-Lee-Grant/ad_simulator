@@ -1,5 +1,4 @@
 import express from 'express';
-import fetch from 'node-fetch';
 import {URLSearchParams} from 'url';
 import path from 'path';
 import {fileURLToPath} from 'url';
