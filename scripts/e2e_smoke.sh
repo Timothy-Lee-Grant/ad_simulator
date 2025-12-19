@@ -36,7 +36,7 @@ fi
 
 # 3. Parse ad click href
 echo "Parsing first ad click href..."
-# Refined regex: excludes double quotes, single quotes (\x27), and brackets
+# Use hex \x27 to handle single quotes safely in the regex
 href=$(echo "$html" | grep -oE '/click\?[^"\x27> ]+' | head -n1 || true)
 
 if [ -z "$href" ]; then
@@ -62,8 +62,10 @@ metric_output=$(curl -sSf "$BASE_URL_BIDENGINE/metrics")
 # Extract numeric values for ad_clicks_total
 max=$(echo "$metric_output" | awk '/^ad_clicks_total\{/ {print $2}' | awk 'BEGIN{m=0} {if($1+0>m) m=$1} END{print m+0}')
 
-# FIX: Use -v to pass shell variable to awk to prevent parenthesis syntax errors
-if [ -n "$max" ] && awk -v m="$max" 'BEGIN { exit !(m > 0) }'; then
+# --- FIX FOR LINE 57 ---
+# We use single quotes for the awk body so the shell doesn't see the parentheses.
+# We pass the $max shell variable in via the -v flag.
+if [ -n "$max" ] && awk -v val="$max" 'BEGIN { if (val > 0) exit 0; else exit 1 }'; then
   echo "ad_clicks_total increased to $max — OK"
 else
   echo "ad_clicks_total not incremented (value: $max)" >&2
