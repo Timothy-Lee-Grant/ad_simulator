@@ -26,7 +26,7 @@ public class BidSelectorTests
 
         await using var ctx = new BidEngine.Data.AppDbContext(options);
         var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
+        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>(), Mock.Of<IExperimentService>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
         res.Should().BeNull();
@@ -51,7 +51,7 @@ public class BidSelectorTests
         await ctx.SaveChangesAsync();
 
         var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
+        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>(), Mock.Of<IExperimentService>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
         res.Should().NotBeNull();
@@ -83,7 +83,7 @@ public class BidSelectorTests
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
         res.Should().NotBeNull();
-        res!.Confidence.Should().Be(0.95m);
+        res!.Confidence.Should().Be(0.95);
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class BidSelectorTests
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
         res.Should().NotBeNull();
-        res!.Confidence.Should().Be(0.5m);
+        res!.Confidence.Should().Be(0.5);
     }
 
     [Fact(Skip = "Temporarily skipping because second algorithm doesn't use this same kind of logic")]
@@ -134,7 +134,7 @@ public class BidSelectorTests
         await ctx.SaveChangesAsync();
 
         var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
+        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>(), Mock.Of<IExperimentService>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
         res.Should().NotBeNull();
@@ -161,7 +161,7 @@ public class BidSelectorTests
         await ctx.SaveChangesAsync();
 
         var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
+        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>(), Mock.Of<IExperimentService>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p", CountryCode = "US" });
         res.Should().NotBeNull();

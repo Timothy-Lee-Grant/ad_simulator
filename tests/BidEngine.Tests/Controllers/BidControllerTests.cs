@@ -24,7 +24,7 @@ public class BidControllerTests
 
         await using var ctx = new BidEngine.Data.AppDbContext(options);
         var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
+        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>(), Mock.Of<IExperimentService>());
         var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache);
         var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
 
@@ -44,7 +44,7 @@ public class BidControllerTests
         await using var ctx = new BidEngine.Data.AppDbContext(options);
         // no campaigns in db -> no winning bids
         var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
+        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>(), Mock.Of<IExperimentService>());
         var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache);
         var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
 
@@ -70,7 +70,7 @@ public class BidControllerTests
         await ctx.SaveChangesAsync();
 
         var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
+        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>(), Mock.Of<IExperimentService>());
         var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache);
 
         var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
@@ -96,7 +96,7 @@ public class BidControllerTests
         await ctx.SaveChangesAsync();
 
         var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
+        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>(), Mock.Of<IExperimentService>());
         var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache);
 
         var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
