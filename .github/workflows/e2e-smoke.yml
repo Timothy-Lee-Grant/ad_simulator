@@ -1,0 +1,28 @@
+name: E2E Smoke Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e-smoke:
+    name: E2E smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start services with Docker Compose
+        run: |
+          docker compose up -d --build
+
+      - name: Wait a few seconds for services to initialize
+        run: sleep 6
+
+      - name: Run E2E smoke script
+        run: |
+          bash scripts/e2e_smoke.sh
+
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes
