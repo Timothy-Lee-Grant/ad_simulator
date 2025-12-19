@@ -118,8 +118,8 @@ services:
 
   frontend:
     build:
-      context: ./FrontEnd
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: FrontEnd/Dockerfile
     container_name: ads_frontend
     ports:
       - "3001:3000"
