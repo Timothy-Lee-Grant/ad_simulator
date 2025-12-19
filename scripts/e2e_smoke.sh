@@ -22,10 +22,11 @@ wait_for() {
   return 1
 }
 
-# Ensure services are responsive
+# 1. Ensure services are responsive
 wait_for "$BASE_URL_BIDENGINE/metrics"
 wait_for "$BASE_URL_FRONTEND/"
 
+# 2. Check homepage contents
 echo "Checking homepage contents..."
 html=$(curl -sSf "$BASE_URL_FRONTEND/")
 if ! echo "$html" | grep -q "Featured Ads"; then
@@ -33,8 +34,9 @@ if ! echo "$html" | grep -q "Featured Ads"; then
   exit 2
 fi
 
+# 3. Parse ad click href
 echo "Parsing first ad click href..."
-# Fixed regex: excludes double quotes, single quotes (\x27), and closing tags
+# Refined regex: excludes double quotes, single quotes (\x27), and brackets
 href=$(echo "$html" | grep -oE '/click\?[^"\x27> ]+' | head -n1 || true)
 
 if [ -z "$href" ]; then
@@ -42,6 +44,7 @@ if [ -z "$href" ]; then
   exit 3
 fi
 
+# 4. Trigger the click
 echo "Triggering click endpoint: $BASE_URL_FRONTEND${href}"
 status=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL_FRONTEND${href}")
 if [ "$status" != "302" ]; then
@@ -52,13 +55,14 @@ fi
 echo "Waiting briefly for metrics to update..."
 sleep 1
 
+# 5. Verify Metrics
 echo "Checking ad_clicks_total metric on bid engine..."
 metric_output=$(curl -sSf "$BASE_URL_BIDENGINE/metrics")
 
-# Extract numeric values for ad_clicks_total{...}
+# Extract numeric values for ad_clicks_total
 max=$(echo "$metric_output" | awk '/^ad_clicks_total\{/ {print $2}' | awk 'BEGIN{m=0} {if($1+0>m) m=$1} END{print m+0}')
 
-# Fixed syntax: Use -v to pass $max to awk to avoid shell expansion errors
+# FIX: Use -v to pass shell variable to awk to prevent parenthesis syntax errors
 if [ -n "$max" ] && awk -v m="$max" 'BEGIN { exit !(m > 0) }'; then
   echo "ad_clicks_total increased to $max — OK"
 else
