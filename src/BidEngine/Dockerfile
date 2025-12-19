@@ -4,8 +4,6 @@ WORKDIR /build
 
 COPY src/BidEngine/BidEngine.csproj ./src/BidEngine/
 
-COPY src/Shared/ ./src/Shared/
-
 RUN dotnet restore src/BidEngine/BidEngine.csproj
 
 COPY src/BidEngine/ ./src/BidEngine/
