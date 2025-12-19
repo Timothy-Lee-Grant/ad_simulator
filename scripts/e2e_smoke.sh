@@ -34,7 +34,9 @@ if ! echo "$html" | grep -q "Featured Ads"; then
 fi
 
 echo "Parsing first ad click href..."
-href=$(echo "$html" | grep -oE '/click\?[^"'> ]+' | head -n1 || true)
+# Fixed regex: excludes double quotes, single quotes (\x27), and closing tags
+href=$(echo "$html" | grep -oE '/click\?[^"\x27> ]+' | head -n1 || true)
+
 if [ -z "$href" ]; then
   echo "No ad click href found on homepage" >&2
   exit 3
@@ -56,7 +58,8 @@ metric_output=$(curl -sSf "$BASE_URL_BIDENGINE/metrics")
 # Extract numeric values for ad_clicks_total{...}
 max=$(echo "$metric_output" | awk '/^ad_clicks_total\{/ {print $2}' | awk 'BEGIN{m=0} {if($1+0>m) m=$1} END{print m+0}')
 
-if [ -z "$max" ] || awk "BEGIN{exit !($max>0)}"; then
+# Fixed syntax: Use -v to pass $max to awk to avoid shell expansion errors
+if [ -n "$max" ] && awk -v m="$max" 'BEGIN { exit !(m > 0) }'; then
   echo "ad_clicks_total increased to $max — OK"
 else
   echo "ad_clicks_total not incremented (value: $max)" >&2
