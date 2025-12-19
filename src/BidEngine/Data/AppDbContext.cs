@@ -1,4 +1,4 @@
-using BidEngine.Models;
+using BidEngine.Shared;
 using Microsoft.EntityFrameworkCore;
 
 namespace BidEngine.Data;

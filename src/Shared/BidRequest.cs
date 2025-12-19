@@ -1,6 +1,6 @@
 using System;
 
-namespace BidEngine.Models;
+namespace BidEngine.Shared;
 
 public class BidRequest
 {

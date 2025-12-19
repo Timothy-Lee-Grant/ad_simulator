@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\BidEngine\BidEngine.csproj" />
+    <ProjectReference Include="..\..\src\Shared\BidEngine.Shared.csproj" />
   </ItemGroup>
 
 </Project>

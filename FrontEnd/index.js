@@ -13,30 +13,30 @@ app.set('views', path.join(__dirname, 'views'));
 const BID_ENGINE_URL = process.env.BID_ENGINE_URL || 'http://bid-engine:8081';
 
 app.get('/', async (req, res) => {
+  // Homepage: show description and up to two ads
+  const userId = req.query.userId || 'user_local_123';
+  const placementId = req.query.placementId || 'homepage_banner';
+
   try {
-    // Example: userId and placementId could come from session/cookies or query params
-    const userId = req.query.userId || 'user_local_123';
-    const placementId = req.query.placementId || 'homepage_banner';
+    // Fetch two bids in parallel to feature two ads
+    const fetchBid = async () => {
+      const response = await fetch(`${BID_ENGINE_URL}/api/bid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, placementId })
+      });
 
-    const response = await fetch(`${BID_ENGINE_URL}/api/bid`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, placementId })
-    });
+      if (response.status === 204) return null;
+      if (!response.ok) return null;
+      return await response.json();
+    };
 
-    if (response.status === 204) {
-      return res.render('index', { ad: null });
-    }
+    const [ad1, ad2] = await Promise.all([fetchBid(), fetchBid()]);
+    const ads = [ad1, ad2].filter(Boolean);
 
-    if (!response.ok) {
-      return res.status(502).send('Bid engine error');
-    }
-
-    const ad = await response.json();
-
-    res.render('index', { ad, userId });
+    res.render('home', { ads, userId });
   } catch (err) {
-    console.error('Error fetching bid:', err);
+    console.error('Error fetching bids:', err);
     res.status(502).send('Bid engine unreachable');
   }
 });

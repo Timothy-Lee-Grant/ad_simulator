@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using BidEngine.Controllers;
-using BidEngine.Models;
+using BidEngine.Shared;
 using Moq;
 using BidEngine.Services;
 using Microsoft.EntityFrameworkCore;

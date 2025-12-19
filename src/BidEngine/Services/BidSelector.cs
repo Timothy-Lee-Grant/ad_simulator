@@ -1,5 +1,5 @@
 
-using BidEngine.Models;
+using BidEngine.Shared;
 
 namespace BidEngine.Services;
 

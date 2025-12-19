@@ -1,6 +1,6 @@
 using System;
 
-namespace BidEngine.Models;
+namespace BidEngine.Shared;
 
 /*
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,0 +1,10 @@
+# Ignore unnecessary folders to keep the build context small
+**/.git
+**/bin/
+**/obj/
+**/node_modules/
+**/.vs/
+**/.vscode/
+
+# DO NOT ignore the Shared folder even if .gitignore says to
+!src/Shared/

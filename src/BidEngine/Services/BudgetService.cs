@@ -1,6 +1,6 @@
 
 using BidEngine.Data;
-using BidEngine.Models;
+using BidEngine.Shared;
 using StackExchange.Redis;
 using Microsoft.EntityFrameworkCore;
 
