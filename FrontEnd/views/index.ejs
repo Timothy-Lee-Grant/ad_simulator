@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>AdSimulator Frontend</title>
+    <style>
+      body { font-family: sans-serif; padding: 2rem; }
+      .ad { border: 1px solid #ddd; padding: 1rem; display:inline-block }
+      .ad img { max-width: 300px; display:block }
+    </style>
+  </head>
+  <body>
+    <h1>Homepage</h1>
+
+    <% if (!ad) { %>
+      <p>No ad available for this placement.</p>
+    <% } else { %>
+      <div class="ad">
+        <h3><%= ad.adContent?.title %></h3>
+        <a href="/click?redirect=<%= encodeURIComponent(ad.adContent?.redirectUrl) %>&campaignId=<%= ad.campaignId %>&adId=<%= ad.adId %>&userId=<%= userId %>">
+          <img src="<%= ad.adContent?.imageUrl %>" alt="<%= ad.adContent?.title %>" />
+        </a>
+        <p>Bid: <%= ad.bidPrice %></p>
+      </div>
+    <% } %>
+
+  </body>
+</html>

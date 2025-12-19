@@ -116,6 +116,20 @@ services:
       Redis__ConnectionString: "redis:6379"
       ASPNETCORE_URLS: "http://+:8081"
 
+  frontend:
+    build:
+      context: ./FrontEnd
+      dockerfile: Dockerfile
+    container_name: ads_frontend
+    ports:
+      - "3001:3000"
+    depends_on:
+      - bid-engine
+    environment:
+      BID_ENGINE_URL: "http://bid-engine:8081"
+    volumes:
+      - ./FrontEnd/static:/app/static
+
 volumes:
   postgres_data:
   prometheus_data:
