@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AdSimulator — Demo Ads</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-inner">
+        <h1>AdSimulator</h1>
+        <p class="tagline">A small demo ad-serving stack — browse ads, test click tracking, and iterate on bidding algorithms.</p>
+        <div class="features">
+          <div class="feature">• Bid Engine (ASP.NET)</div>
+          <div class="feature">• Redis cache & Postgres persistence</div>
+          <div class="feature">• A/B testing & pluggable strategies</div>
+          <div class="feature">• Frontend demo with click proxy</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="intro">
+        <h2>Featured Ads</h2>
+        <p>Below are up to two ads selected by the bid engine for you (user <code><%= userId %></code>).</p>
+      </section>
+
+      <% if (ads.length === 0) { %>
+        <div class="no-ads">No ads returned for the current placement.</div>
+      <% } else { %>
+        <section class="ads-grid">
+          <% ads.forEach(function(ad) { %>
+            <article class="ad-card">
+              <div class="ad-media">
+                <img src="<%= ad.adContent?.imageUrl %>" alt="<%= ad.adContent?.title %>" />
+              </div>
+              <div class="ad-body">
+                <h3><%= ad.adContent?.title || 'Sponsored' %></h3>
+                <p class="ad-desc"><%= ad.adContent?.description || '' %></p>
+                <div class="ad-meta">
+                  <span class="bid">Bid: <strong><%= ad.bidPrice %></strong></span>
+                  <a class="cta" href="/click?redirect=<%= encodeURIComponent(ad.adContent?.redirectUrl) %>&campaignId=<%= ad.campaignId %>&adId=<%= ad.adId %>&userId=<%= userId %>">Open Ad</a>
+                </div>
+              </div>
+            </article>
+          <% }) %>
+        </section>
+      <% } %>
+
+      <section class="about">
+        <h2>About this demo</h2>
+        <p>This project demonstrates a simple ad auction flow, campaign management, and click tracking with Prometheus metrics. It's a good starting point if you want to experiment with different bidding strategies or add features such as rate-limiting, fraud detection, or richer analytics.</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <small>AdSimulator — Local demo • <a href="/">Refresh</a></small>
+    </footer>
+  </body>
+</html>
