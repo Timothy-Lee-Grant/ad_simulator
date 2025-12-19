@@ -139,6 +139,8 @@ public class BidController : ControllerBase
         // In a real system, we would validate the campaign/ad, record the click event to Kafka or DB,
         // and possibly trigger post-click logic (conversion tracking, attribution, etc).
 
+        // Tim Grant - I will need to add functionality which deducts more money from the campaign budget when the user
+        //clicks on an ad. 
         return Ok("Click recorded");
     }
 
