@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using BidEngine.Models;
+using BidEngine.Shared;
 using BidEngine.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;

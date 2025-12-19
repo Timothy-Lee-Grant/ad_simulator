@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using BidEngine.Models;
+using BidEngine.Shared;
 using BidEngine.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,5 @@
 using System;
-using BidEngine.Models;
+using BidEngine.Shared;
 using FluentAssertions;
 using Xunit;
 
