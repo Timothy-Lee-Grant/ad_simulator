@@ -116,5 +116,31 @@ public class BidController : ControllerBase
         return Ok("BidEngine is running!");
     }
 
+    /// <summary>
+    /// GET /api/bid/test
+    /// Simple health check endpoint to verify the service is running
+    /// </summary>
+    [HttpGet("User_Click_Event")]
+    public ActionResult<string> User_Click_Event([FromQuery] Guid? campaignId, [FromQuery] Guid? adId, [FromQuery] string? userId)
+    {
+        _logger.LogInformation("User clicked on the ad: campaign={CampaignId} ad={AdId} user={UserId}", campaignId, adId, userId);
+
+        // Record click metric with labels (campaign, ad)
+        try
+        {
+            var clicks = Metrics.CreateCounter("ad_clicks_total", "Total ad clicks", new CounterConfiguration { LabelNames = new[] { "campaign", "ad" } });
+            clicks.WithLabels(campaignId?.ToString() ?? "unknown", adId?.ToString() ?? "unknown").Inc();
+        }
+        catch
+        {
+            // don't let metrics errors surface to caller
+        }
+
+        // In a real system, we would validate the campaign/ad, record the click event to Kafka or DB,
+        // and possibly trigger post-click logic (conversion tracking, attribution, etc).
+
+        return Ok("Click recorded");
+    }
+
     
 }
