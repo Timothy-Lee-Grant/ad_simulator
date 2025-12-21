@@ -57,7 +57,19 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ImageUrl).HasColumnName("image_url").IsRequired();
             entity.Property(e => e.RedirectUrl).HasColumnName("redirect_url").IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            entity.Property(e => e.Embedding).HasColumnName("embedding").HasColumnType("vector(384)");
+            entity.Property(e => e.Description).HasColumnName("description");
+
+            // Persist embeddings as JSON (jsonb) for compatibility across dev environments.
+            // We use a ValueConverter to serialize float[] into JSON for storage.
+            var floatArrayToJsonConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<float[]?, string?>(
+                v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v),
+                v => string.IsNullOrEmpty(v) ? null : System.Text.Json.JsonSerializer.Deserialize<float[]>(v)
+            );
+
+            entity.Property(e => e.Embedding)
+                .HasColumnName("embedding")
+                .HasConversion(floatArrayToJsonConverter)
+                .HasColumnType("jsonb");
         });
 
         modelBuilder.Entity<TargetingRule>(entity =>
