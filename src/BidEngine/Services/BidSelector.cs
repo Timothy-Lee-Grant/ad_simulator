@@ -138,7 +138,8 @@ public class BidSelector
             {
                 Title = selectedAd.Title,
                 ImageUrl = selectedAd.ImageUrl,
-                RedirectUrl = selectedAd.RedirectUrl
+                    RedirectUrl = selectedAd.RedirectUrl,
+                    Description = selectedAd.Description
             },
             Confidence = 0.95 // this will need to be updated later to match real targeting metrics
         };
@@ -220,7 +221,8 @@ public class BidSelector
             {
                 ImageUrl = winningBid.ImageUrl,
                 Title = winningBid.Title,
-                RedirectUrl = winningBid.RedirectUrl
+                    RedirectUrl = winningBid.RedirectUrl,
+                    Description = winningBid.Description
             }
         };
 

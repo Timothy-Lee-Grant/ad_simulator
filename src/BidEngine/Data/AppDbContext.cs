@@ -1,10 +1,13 @@
 using BidEngine.Shared;
 using Microsoft.EntityFrameworkCore;
+using Pgvector.EntityFrameworkCore;
+using Npgsql;
 
 namespace BidEngine.Data;
 
 public class AppDbContext : DbContext
 {
+
     public AppDbContext(DbContextOptions<AppDbContext> options ) : base(options)
     {}
 
@@ -12,8 +15,14 @@ public class AppDbContext : DbContext
     public DbSet<Ad> Ads => Set<Ad>();
     public DbSet<TargetingRule> TargetingRules => Set<TargetingRule>();
 
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Note: pgvector extension is optional for now. We persist embeddings as jsonb
+        // and will enable pgvector (and call HasPostgresExtension("vector")) when the
+        // Postgres instance supports the extension in the environment.
+
         base.OnModelCreating(modelBuilder);
 
         // Explicitly map to lowercase table names
@@ -50,6 +59,28 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ImageUrl).HasColumnName("image_url").IsRequired();
             entity.Property(e => e.RedirectUrl).HasColumnName("redirect_url").IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
+
+            // Persist embeddings as JSON (jsonb) for compatibility across dev environments.
+            // We use a ValueConverter to serialize float[] into JSON for storage.
+            var floatArrayToJsonConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<float[]?, string?>(
+                v => v == null ? null : System.Text.Json.JsonSerializer.Serialize<float[]>(v, (System.Text.Json.JsonSerializerOptions?)null),
+                v => string.IsNullOrEmpty(v) ? null : System.Text.Json.JsonSerializer.Deserialize<float[]>(v, (System.Text.Json.JsonSerializerOptions?)null)
+            );
+
+            var floatArrayComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<float[]?>(
+                (a, b) => (a == null && b == null) || (a != null && b != null && System.Linq.Enumerable.SequenceEqual(a, b)),
+                a => a == null ? 0 : a.Aggregate(0, (hash, val) => HashCode.Combine(hash, val.GetHashCode())),
+                a => a == null ? null : a.ToArray()
+            );
+
+            var embeddingProp = entity.Property(e => e.Embedding)
+                .HasColumnName("embedding")
+                .HasConversion(floatArrayToJsonConverter)
+                .HasColumnType("jsonb");
+
+            // Ensure EF compares the array contents rather than reference equality.
+            embeddingProp.Metadata.SetValueComparer(floatArrayComparer);
         });
 
         modelBuilder.Entity<TargetingRule>(entity =>
