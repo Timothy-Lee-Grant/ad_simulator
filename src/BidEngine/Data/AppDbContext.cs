@@ -7,15 +7,7 @@ namespace BidEngine.Data;
 
 public class AppDbContext : DbContext
 {
-    // 1. Static constructor to force global type mapping once
-    static AppDbContext()
-    {
-        // This tells the underlying Npgsql driver about vectors 
-        // before EF even tries to build the model.
-        #pragma warning disable CS0618
-        NpgsqlConnection.GlobalTypeMapper.UseVector();
-        #pragma warning restore CS0618
-    }
+
     public AppDbContext(DbContextOptions<AppDbContext> options ) : base(options)
     {}
 
@@ -23,20 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<Ad> Ads => Set<Ad>();
     public DbSet<TargetingRule> TargetingRules => Set<TargetingRule>();
 
-protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-{
-    if (!optionsBuilder.IsConfigured)
-    {
-        // We create a data source that explicitly supports vectors
-        // and pass it into UseNpgsql. This is the only way to 
-        // guarantee the Design-Time tool sees the vector mapper.
-        var dataSourceBuilder = new NpgsqlDataSourceBuilder("Host=localhost;Database=dummy");
-        dataSourceBuilder.UseVector();
-        var dataSource = dataSourceBuilder.Build();
 
-        optionsBuilder.UseNpgsql(dataSource);
-    }
-}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
