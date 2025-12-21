@@ -68,10 +68,19 @@ public class AppDbContext : DbContext
                 v => string.IsNullOrEmpty(v) ? null : System.Text.Json.JsonSerializer.Deserialize<float[]>(v, (System.Text.Json.JsonSerializerOptions?)null)
             );
 
-            entity.Property(e => e.Embedding)
+            var floatArrayComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<float[]?>(
+                (a, b) => (a == null && b == null) || (a != null && b != null && System.Linq.Enumerable.SequenceEqual(a, b)),
+                a => a == null ? 0 : a.Aggregate(0, (hash, val) => HashCode.Combine(hash, val.GetHashCode())),
+                a => a == null ? null : a.ToArray()
+            );
+
+            var embeddingProp = entity.Property(e => e.Embedding)
                 .HasColumnName("embedding")
                 .HasConversion(floatArrayToJsonConverter)
                 .HasColumnType("jsonb");
+
+            // Ensure EF compares the array contents rather than reference equality.
+            embeddingProp.Metadata.SetValueComparer(floatArrayComparer);
         });
 
         modelBuilder.Entity<TargetingRule>(entity =>
