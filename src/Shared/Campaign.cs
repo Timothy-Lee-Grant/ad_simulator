@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BidEngine.Shared;
 
@@ -87,7 +88,12 @@ public class Ad
     public string ImageUrl {get; set;} = string.Empty;
     public string RedirectUrl {get; set;} = string.Empty;
     public DateTime CreatedAt {get; set;}
-
+    public string Description { get; set; } = string.Empty;
+    /*
+    [Column(TypeName = "vector(384)")]
+    public Pgvector.Vector? Embedding { get; set; }
+    */
+    public float[]? Embedding { get; set; }
     public Campaign Campaign {get; set;} = null!;
 
     //Tim Grant - In the future I need to add multipliers for each advertisement based on the targeting of that specific advertisement.

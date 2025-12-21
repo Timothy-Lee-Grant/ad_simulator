@@ -4,14 +4,22 @@ using BidEngine.Services;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using StackExchange.Redis;
+using Npgsql; // Add this for NpgsqlDataSourceBuilder
+using Pgvector.EntityFrameworkCore; // Add this for vector support
 
 var builder = WebApplication.CreateBuilder(args);
 
 //add services to the container
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+// 2. Create the Data Source with the "Secret Sauce"
+// This teaches the low-level driver how to handle the vector type
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+dataSourceBuilder.UseVector(); 
+var dataSource = dataSourceBuilder.Build();
+
 //add entity framework
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(dataSource));
 
 
 //add redis
