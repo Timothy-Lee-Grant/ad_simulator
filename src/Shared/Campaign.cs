@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BidEngine.Shared;
 
@@ -88,17 +87,6 @@ public class Ad
     public string ImageUrl {get; set;} = string.Empty;
     public string RedirectUrl {get; set;} = string.Empty;
     public DateTime CreatedAt {get; set;}
-
-    // Description is a convenience field used in the app but not yet present
-    // in the database schema for local/dev environments. Mark as NotMapped
-    // until we add a migration to persist it.
-    [NotMapped]
-    public string Description {get; set;} = string.Empty;
-
-    // Currently the pgvector mapping isn't available in all development environments
-    // so treat this as non-mapped for now to avoid EF model validation errors.
-    [NotMapped]
-    public Pgvector.Vector? Embedding {get; set;}
 
     public Campaign Campaign {get; set;} = null!;
 
