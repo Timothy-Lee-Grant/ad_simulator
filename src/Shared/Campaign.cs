@@ -91,7 +91,7 @@ public class Ad
     public string Description { get; set; } = string.Empty;
     
     [Column(TypeName = "vector(384)")]
-    public Pgvector.Vector? Embedding { get; set; }
+    public float[]? Embedding { get; set; }
     
     //public float[]? Embedding { get; set; }
     public Campaign Campaign {get; set;} = null!;
