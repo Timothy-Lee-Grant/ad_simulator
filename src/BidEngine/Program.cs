@@ -4,14 +4,21 @@ using BidEngine.Services;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using StackExchange.Redis;
+using Npgsql;
+using Pgvector.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //add services to the container
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+//Tim Grant - investigate why and how I needed to use this.
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+dataSourceBuilder.UseVector();
+var dataSource = dataSourceBuilder.Build();
+
 //add entity framework
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(dataSource));
 
 
 //add redis

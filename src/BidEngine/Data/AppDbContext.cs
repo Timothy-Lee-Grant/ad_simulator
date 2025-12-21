@@ -1,5 +1,6 @@
 using BidEngine.Shared;
 using Microsoft.EntityFrameworkCore;
+using Pgvector.EntityFrameworkCore;
 
 namespace BidEngine.Data;
 
@@ -14,6 +15,8 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        //register the pgvetor to the entity framework
+        modelBuilder.HasPostgresExtension("vector");
         base.OnModelCreating(modelBuilder);
 
         // Explicitly map to lowercase table names
