@@ -19,7 +19,9 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasPostgresExtension("vector");
+        // Note: pgvector extension is optional for now. We persist embeddings as jsonb
+        // and will enable pgvector (and call HasPostgresExtension("vector")) when the
+        // Postgres instance supports the extension in the environment.
 
         base.OnModelCreating(modelBuilder);
 
@@ -62,8 +64,8 @@ public class AppDbContext : DbContext
             // Persist embeddings as JSON (jsonb) for compatibility across dev environments.
             // We use a ValueConverter to serialize float[] into JSON for storage.
             var floatArrayToJsonConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<float[]?, string?>(
-                v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v),
-                v => string.IsNullOrEmpty(v) ? null : System.Text.Json.JsonSerializer.Deserialize<float[]>(v)
+                v => v == null ? null : System.Text.Json.JsonSerializer.Serialize<float[]>(v, (System.Text.Json.JsonSerializerOptions?)null),
+                v => string.IsNullOrEmpty(v) ? null : System.Text.Json.JsonSerializer.Deserialize<float[]>(v, (System.Text.Json.JsonSerializerOptions?)null)
             );
 
             entity.Property(e => e.Embedding)
