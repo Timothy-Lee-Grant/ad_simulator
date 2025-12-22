@@ -19,7 +19,10 @@ dataSourceBuilder.UseVector();
 var dataSource = dataSourceBuilder.Build();
 
 //add entity framework
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(dataSource));
+// Ensure EF provider knows how to map the pgvector type by enabling UseVector()
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(dataSource, npgsqlOptions => npgsqlOptions.UseVector())
+);
 
 
 //add redis

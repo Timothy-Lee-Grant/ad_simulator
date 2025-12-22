@@ -52,6 +52,15 @@ CREATE TABLE daily_metrics (
     UNIQUE (campaign_id, date)
 );
 
+CREATE TABLE videos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    embedding vector(384), -- Pre-calculated vector for the video
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- ==========================================
 -- 3. INDEXING
 -- ==========================================
@@ -86,3 +95,7 @@ FROM campaigns WHERE name = 'FashionBrand Campaign';
 INSERT INTO ads (campaign_id, title, description, image_url, redirect_url, embedding)
 SELECT id, 'Sunset Premium Ad', 'A high-priority test ad for auction verification', '/static/sunset1.png', 'https://example.com/test', array_fill(0.3, ARRAY[384])::vector
 FROM campaigns WHERE name = 'Test High-Bid Campaign';
+
+-- Seed a test video
+INSERT INTO videos (title, description, embedding)
+VALUES ('Gaming Highlights 2025', 'Fast paced competitive gameplay of first person shooters', array_fill(0.15, ARRAY[384])::vector);

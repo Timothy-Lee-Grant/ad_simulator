@@ -60,7 +60,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.RedirectUrl).HasColumnName("redirect_url").IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
-
+            entity.Property(e => e.Embedding).HasColumnName("embedding").HasColumnType("vector(384)");
+            /*
             // Persist embeddings as JSON (jsonb) for compatibility across dev environments.
             // We use a ValueConverter to serialize float[] into JSON for storage.
             var floatArrayToJsonConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<float[]?, string?>(
@@ -81,6 +82,7 @@ public class AppDbContext : DbContext
 
             // Ensure EF compares the array contents rather than reference equality.
             embeddingProp.Metadata.SetValueComparer(floatArrayComparer);
+            */
         });
 
         modelBuilder.Entity<TargetingRule>(entity =>
@@ -92,6 +94,18 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CampaignId).HasColumnName("campaign_id");
             entity.Property(e => e.RuleType).HasColumnName("rule_type").IsRequired();
             entity.Property(e => e.RuleValue).HasColumnName("rule_value").IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<Video>(entity =>
+        {
+            entity.ToTable("videos");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Title).HasColumnName("title");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Embedding).HasColumnName("embedding").HasColumnType("vector(384)");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         });
     }
