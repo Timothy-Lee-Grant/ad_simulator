@@ -1,0 +1,73 @@
+<!doctype html>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <aside>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <h3 class="text-slate-900 font-semibold tracking-tight">Sponsored</h3>
+            <% if (ad) { %>
+              <div class="mt-4">
+                <img src="<%= ad.adContent.imageUrl %>" alt="<%= ad.adContent.title %>" class="w-full h-36 object-cover rounded-md" />
+                <h4 class="mt-3 text-slate-900 font-semibold"><%= ad.adContent.title %></h4>
+                <p class="text-sm text-slate-500 mt-1"><%= ad.adContent.description %></p>
+                <div class="mt-3">
+                  <a href="/click?redirect=<%= encodeURIComponent(ad.adContent.redirectUrl) %>&campaignId=<%= ad.campaignId %>&adId=<%= ad.adId %>&userId=<%= userId %>" class="inline-block mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Open Ad</a>
+                </div>
+              </div>
+            <% } else { %>
+              <p class="mt-4 text-sm text-slate-500">No sponsored ad available.</p>
+            <% } %>
+
+            <pre id="debug-similar" class="hidden"><%= JSON.stringify(similarAds) %></pre>
+            <% if (similarAds && similarAds.length) { %>
+              <div class="mt-6">
+                <h4 class="text-sm text-slate-900 font-semibold">Similar Ads</h4>
+                <ul class="mt-3 space-y-3">
+                  <% similarAds.forEach(function(sa) { %>
+                    <li class="flex items-start gap-3">
+                      <img src="<%= sa.imageUrl %>" alt="<%= sa.title %>" class="w-16 h-12 object-cover rounded" />
+                      <div>
+                        <div class="text-sm text-slate-900 font-semibold"><%= sa.title %></div>
+                        <div class="text-xs text-slate-500"><%= sa.description %></div>
+                      </div>
+                      <div class="ml-auto">
+                        <a href="/click?redirect=<%= encodeURIComponent(sa.redirectUrl) %>&adId=<%= sa.id %>&userId=<%= userId %>" class="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 rounded-md text-sm">Open</a>
+                      </div>
+                    </li>
+                  <% }) %>
+                </ul>
+              </div>
+            <% } %>
+          </div>
+        </aside>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div class="md:col-span-2">
+          <div class="aspect-video bg-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <img src="https://picsum.photos/seed/<%= videoId %>/1280/720" alt="video thumbnail" class="w-full h-full object-cover" />
+          </div>
+          <h1 class="mt-4 text-2xl text-slate-900 font-semibold tracking-tight">Simulated Video — <span class="text-slate-500">ID: <%= videoId %></span></h1>
+          <p class="mt-2 text-slate-500">This is a simulated video page — clicking the video plays a demo video and triggers an ad fetch on page load.</p>
+        </div>
+
+        <aside>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <h3 class="text-slate-900 font-semibold tracking-tight">Sponsored</h3>
+            <% if (ad) { %>
+              <div class="mt-4">
+                <img src="<%= ad.adContent?.imageUrl %>" alt="<%= ad.adContent?.title %>" class="w-full h-36 object-cover rounded-md" />
+                <h4 class="mt-3 text-slate-900 font-semibold"><%= ad.adContent?.title %></h4>
+                <p class="text-sm text-slate-500 mt-1"><%= ad.adContent?.description || '' %></p>
+                <div class="mt-3">
+                  <a href="/click?redirect=<%= encodeURIComponent(ad.adContent?.redirectUrl) %>&campaignId=<%= ad.campaignId %>&adId=<%= ad.adId %>&userId=<%= userId %>" class="inline-block mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Open Ad</a>
+                </div>
+              </div>
+            <% } else { %>
+              <div class="mt-4 text-sm text-slate-500">No ad available for this video at the moment.</div>
+            <% } %>
+          </div>
+        </aside>
+      </div>
+
+    </main>
+  </body>
+</html>

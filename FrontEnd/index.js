@@ -34,9 +34,52 @@ app.get('/', async (req, res) => {
     const [ad1, ad2] = await Promise.all([fetchBid(), fetchBid()]);
     const ads = [ad1, ad2].filter(Boolean);
 
-    res.render('home', { ads, userId });
+    // Example video library (simulated content)
+    const videos = [
+      { id: 'gaming-highlights', title: 'Gaming Highlights' },
+      { id: 'tech-review', title: 'Tech Review' },
+      { id: 'travel-diary', title: 'Travel Diary' },
+      { id: 'music-mix', title: 'Music Mix' },
+      { id: 'cooking-bites', title: 'Cooking Bites' },
+      { id: 'car-vlog', title: 'Car Review' }
+    ];
+
+    res.render('home', { ads, userId, videos });
   } catch (err) {
     console.error('Error fetching bids:', err);
+    res.status(502).send('Bid engine unreachable');
+  }
+});
+
+
+// Video page: renders a simulated video and a server-side fetched ad
+app.get('/video/:id', async (req, res) => {
+  const videoId = req.params.id;
+  const userId = req.query.userId || 'user_local_123';
+
+  try {
+    const response = await fetch(`${BID_ENGINE_URL}/api/bid`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, placementId: 'video_player' })
+    });
+
+    let ad = null;
+    if (response.ok && response.status !== 204) ad = await response.json();
+
+    // Also fetch semantic matches for this video from the bid engine (uses seeded video embeddings)
+    let similarAds = [];
+    try {
+      const simRes = await fetch(`${BID_ENGINE_URL}/api/ads/similar-to-video?title=${encodeURIComponent(videoId)}&k=3`);
+      if (simRes.ok) similarAds = await simRes.json();
+      console.log('similarAds fetched for', videoId, 'count=', similarAds.length);
+    } catch (e) {
+      console.error('Failed to fetch similar ads', e);
+    }
+
+    res.render('video', { videoId, ad, userId, similarAds });
+  } catch (err) {
+    console.error('Error fetching bid for video:', err);
     res.status(502).send('Bid engine unreachable');
   }
 });
