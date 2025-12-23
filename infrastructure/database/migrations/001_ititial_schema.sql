@@ -91,10 +91,19 @@ INSERT INTO ads (campaign_id, title, description, image_url, redirect_url, embed
 SELECT id, 'Summer Trends', 'Latest sustainable fashion for the summer season', '/static/sunset3.png', 'https://example.com/fashion', array_fill(0.2, ARRAY[384])::vector
 FROM campaigns WHERE name = 'FashionBrand Campaign';
 
--- Add Test High-Bid Ads
+
+-- Add Sunset Ads to the "Test High-Bid Campaign"
 INSERT INTO ads (campaign_id, title, description, image_url, redirect_url, embedding)
-SELECT id, 'Sunset Premium Ad', 'A high-priority test ad for auction verification', '/static/sunset1.png', 'https://example.com/test', array_fill(0.3, ARRAY[384])::vector
+SELECT id, 'Sunset Ad 1', 'A beautiful sunset overlooking the ocean.' ,'/static/sunset1.png', 'https://example.com/test1', array_fill(0.3, ARRAY[384])::vector
+FROM campaigns WHERE name = 'Test High-Bid Campaign'
+UNION ALL
+SELECT id, 'Sunset Ad 2', 'As the sun goes down over the beach, peace falls upon the land.', '/static/sunset2.png', 'https://example.com/test2', array_fill(0.3, ARRAY[384])::vector
+FROM campaigns WHERE name = 'Test High-Bid Campaign'
+UNION ALL
+SELECT id, 'Sunset Ad 3', 'If you wanted a vacation on a beautiful, sunlit beach, then this is the place for you.', '/static/sunset3.png', 'https://example.com/test3', array_fill(0.3, ARRAY[384])::vector
 FROM campaigns WHERE name = 'Test High-Bid Campaign';
+
+
 
 -- Seed a test video
 INSERT INTO videos (title, description, embedding)
