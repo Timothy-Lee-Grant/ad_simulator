@@ -111,10 +111,15 @@ services:
       redis:
         condition: service_healthy
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__DefaultConnection: "Server=postgres;Port=5432;Database=ads_db;User Id=postgres;Password=postgres;"
-      Redis__ConnectionString: "redis:6379"
-      ASPNETCORE_URLS: "http://+:8081"
+      #ASPNETCORE_ENVIRONMENT: Development
+      #ConnectionStrings__DefaultConnection: "Server=postgres;Port=5432;Database=ads_db;User Id=postgres;Password=postgres;"
+      #Redis__ConnectionString: "redis:6379"
+      #ASPNETCORE_URLS: "http://+:8081"
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Docker swaps ${AWS_DB_CONN} with the value from your .env file
+      - ConnectionStrings__AwsConnection=${AWS_DB_CONN}
+      - Redis__ConnectionString=redis:6379
+      - ASPNETCORE_URLS=http://+:8081
 
   frontend:
     build:

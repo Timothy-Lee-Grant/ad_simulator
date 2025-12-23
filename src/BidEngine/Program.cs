@@ -12,9 +12,13 @@ var builder = WebApplication.CreateBuilder(args);
 //add services to the container
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+//get aws rds connection string
+var awsConnectionString = builder.Configuration.GetConnectionString("AwsConnection");
+
+
 // 2. Create the Data Source with the "Secret Sauce"
 // This teaches the low-level driver how to handle the vector type
-var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(awsConnectionString);
 dataSourceBuilder.UseVector(); 
 var dataSource = dataSourceBuilder.Build();
 
