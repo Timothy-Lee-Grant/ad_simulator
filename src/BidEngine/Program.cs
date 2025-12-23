@@ -12,14 +12,23 @@ var builder = WebApplication.CreateBuilder(args);
 //add services to the container
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+//get aws rds connection string
+//Tim Grant - This works with AWS RDS (but will comment out to force local postgres container to be the one used.)
+//var awsConnectionString = builder.Configuration.GetConnectionString("AwsConnection");
+
+
 // 2. Create the Data Source with the "Secret Sauce"
 // This teaches the low-level driver how to handle the vector type
+//var dataSourceBuilder = new NpgsqlDataSourceBuilder(awsConnectionString);
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 dataSourceBuilder.UseVector(); 
 var dataSource = dataSourceBuilder.Build();
 
 //add entity framework
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(dataSource));
+// Ensure EF provider knows how to map the pgvector type by enabling UseVector()
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(dataSource, npgsqlOptions => npgsqlOptions.UseVector())
+);
 
 
 //add redis
