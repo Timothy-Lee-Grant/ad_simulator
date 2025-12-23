@@ -13,12 +13,14 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 //get aws rds connection string
-var awsConnectionString = builder.Configuration.GetConnectionString("AwsConnection");
+//Tim Grant - This works with AWS RDS (but will comment out to force local postgres container to be the one used.)
+//var awsConnectionString = builder.Configuration.GetConnectionString("AwsConnection");
 
 
 // 2. Create the Data Source with the "Secret Sauce"
 // This teaches the low-level driver how to handle the vector type
-var dataSourceBuilder = new NpgsqlDataSourceBuilder(awsConnectionString);
+//var dataSourceBuilder = new NpgsqlDataSourceBuilder(awsConnectionString);
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 dataSourceBuilder.UseVector(); 
 var dataSource = dataSourceBuilder.Build();
 
