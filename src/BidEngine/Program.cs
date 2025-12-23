@@ -55,7 +55,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    //db.Database.Migrate(); // Uncomment if using EF Core migrations
+    db.Database.Migrate(); // Uncomment if using EF Core migrations
 }
 
 //configure the http request pipeline
