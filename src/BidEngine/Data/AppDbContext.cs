@@ -23,7 +23,7 @@ public class AppDbContext : DbContext
         // and will enable pgvector (and call HasPostgresExtension("vector")) when the
         // Postgres instance supports the extension in the environment.
 
-        //modelBuilder.HasPostgresExtension("vector");
+        modelBuilder.HasPostgresExtension("vector");
         base.OnModelCreating(modelBuilder);
 
         // Explicitly map to lowercase table names
