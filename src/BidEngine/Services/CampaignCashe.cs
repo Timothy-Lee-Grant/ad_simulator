@@ -10,6 +10,12 @@ namespace BidEngine.Services;
 
 public class CampaignCache
 {
+    //Tim Grant I am considering what architecture in the C# code I should use. 
+    //Because I am going to be connecting to the same postgres database And to the same Redis database for both my semantics search and my normal highest bidding auction. 
+    //I think it makes sense for me to put all of the logic for the database connections into the same class.
+    //Instead of having two separate functions that both have connections to the exact same database.
+    //But this might mean that I should rename my class to be something more generic, because right now the name does not necessarily indicate what it's actually doing.  
+    //Gemini suggests naming the class AdEngineDataService
     private readonly IDatabase _redis;
     private readonly AppDbContext _dbContext;
     private readonly ILogger<CampaignCache> _logger;
@@ -115,6 +121,20 @@ public class CampaignCache
         await _redis.KeyDeleteAsync(casheKey);
         await _redis.KeyDeleteAsync("campaigns::active::all");
         _logger.LogInformation("Invalidated cache for campaign {CampaignId}", campaignId);
+    }
+
+    public async Task<Pgvector.Vector?> FindVectorFromVideoId(Guid videoId)
+    {
+        //var result = await _dbContext.Videos.Include(something=>something.Embedding).Where(s=>s.VideoId).GetAsync();
+        //var result = await _dbContext.Videos.Where(passedInParameter.Id == videoId).SingleOrDefaultAsync();
+        
+        var video = await _dbContext.Videos
+        .AsNoTracking() // Performance boost: we aren't changing the data, just reading
+        .Where(v => v.Id == videoId)
+        .Select(v => new { v.Embedding }) // Optional: Only pull the vector from SQL, not the whole row
+        .FirstOrDefaultAsync();
+
+        return video?.Embedding;
     }
     
 }

@@ -35,17 +35,42 @@ public class BidSelector
         var adSelection = 0.7;
         //var res = null;
         BidResponse? res;
-        if(adSelection>0.5)
+
+        //determine if metadata about user request exists so I can route 
+        //ad selection to the sematic search or the highest bidding action
+        if(request.VideoId)
         {
-            res = await SelectWinningBidAsyncAlgorithm1(request);
+            res = await SelectWinningBidBySemanticSearch(request);
         }
         else
         {
-            res = await SelectWinningBidAsyncAlgorithm2(request);
+            //perform AB Testing for 'dumb highest bid auction method' 
+            //for requests which do not have semantic data to compare against.
+            if(adSelection>0.5)
+            {
+                res = await SelectWinningBidAsyncAlgorithm1(request);
+            }
+            else
+            {
+                res = await SelectWinningBidAsyncAlgorithm2(request);
+            }
         }
+
+        
+        return res;
+    }
+
+    public async Task<BidResponse?> SelectWinningBidBySemanticSearch(BidRequest request)
+    {
+        _logger.LogInformation(
+            "Using Semantic Search to Select winning advertisement to show to user: {userId}",
+        request.UserId
+        );
+        BidResponse? result=null;
+
         
 
-        return res;
+        return result;
     }
 
     /// <summary>

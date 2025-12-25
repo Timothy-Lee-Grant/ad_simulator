@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<Ad> Ads => Set<Ad>();
     public DbSet<TargetingRule> TargetingRules => Set<TargetingRule>();
+    public DbSet<Video> Videos => Set<Video>();
 
 
 
