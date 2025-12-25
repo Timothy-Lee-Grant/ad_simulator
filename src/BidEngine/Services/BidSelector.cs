@@ -34,11 +34,11 @@ public class BidSelector
     {
         var adSelection = 0.7;
         //var res = null;
-        BidResponse? res;
+        BidResponse? res = null;
 
         //determine if metadata about user request exists so I can route 
         //ad selection to the sematic search or the highest bidding action
-        if(request.VideoId)
+        if(request.VideoId.HasValue)
         {
             res = await SelectWinningBidBySemanticSearch(request);
         }
@@ -68,7 +68,7 @@ public class BidSelector
         );
         BidResponse? result=null;
 
-        
+
 
         return result;
     }

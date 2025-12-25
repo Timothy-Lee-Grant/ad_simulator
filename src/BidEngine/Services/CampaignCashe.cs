@@ -4,6 +4,8 @@ using StackExchange.Redis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using AllMiniLmL6V2Sharp;
+
 
 
 namespace BidEngine.Services;
@@ -136,5 +138,34 @@ public class CampaignCache
 
         return video?.Embedding;
     }
+
+    public async Task CreateVectorFromVideoId(Guid videoId)
+    {
+        /*
+        string? videoDescription = await _dbContext.Videos
+            .Select(v => v.Description)
+            .Where(v => v.Id == videoId)
+            .FirstOrDefaultAsync();
+        */
+        string? videoDescription = await _dbContext.Videos
+        .Where(v => v.Id == videoId)
+        .Select(v => v.Description) 
+        .FirstOrDefaultAsync();
+
+        if(videoDescription is not null)
+        {
+            //Tim Grant - One of the suggestions which Gemini just told me to do was not to have this embedder object created each time I run this function, because this will cause my application to crash in the future if I do this many times. So it suggested the singleton pattern. I will need to implement this in the future. 
+            using var embedder = new AllMiniLmL6V2Embedder();
+            float[] embedding = embedder.GenerateEmbedding(videoDescription).ToArray();
+        }
+        return;
+    }
+    public async Task CreateVectorForAllVideos()
+    {
+        return;
+    }
+
+    //Tim Grant - I just realized that I don't really have any actual endpoints for creating and adding data from my C# into the database. 
+    //If I did this, I would need to give the user a frontend to be able to actually perform those operations. This is something I have not built out yet but might be valuable in the future. 
     
 }
