@@ -35,7 +35,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     var redisConnectionString = builder.Configuration["Redis__ConnectionString"] ?? "redis:6379";
-    return ConnectionMultiplexer.Connect(redisConnectionString);
+    // Make the multiplexer tolerant to transient startup failures so the
+    // application can continue (useful for one-off operations like seeding).
+    var opts = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+    opts.AbortOnConnectFail = false; // don't throw if Redis isn't immediately available
+    opts.ConnectRetry = 5;
+    return ConnectionMultiplexer.Connect(opts);
 });
 
 
@@ -57,7 +62,16 @@ if(args.Contains("--seed-vectors"))
     using (var scope = app.Services.CreateScope())
     {
         var service = scope.ServiceProvider.GetRequiredService<CampaignCache>();
-        await service.GenerateEmbeddingsForAllVideos();
+        try
+        {
+            await service.GenerateEmbeddingsForAllVideos();
+            Console.WriteLine("Seed vectors generation completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error while generating embeddings: {ex}");
+            throw;
+        }
         //await service.GenerateEmbeddingsForAllAds();
         return;
     }
