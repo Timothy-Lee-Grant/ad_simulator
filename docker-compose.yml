@@ -120,9 +120,6 @@ services:
       - ConnectionStrings__AwsConnection=${AWS_DB_CONN}
       - Redis__ConnectionString=redis:6379
       - ASPNETCORE_URLS=http://+:8081
-        # To provide the AllMiniLm model files to the container, either mount a host
-        # ./model directory here or bake them into the image. Example (uncomment):
-        # - "MODEL_DIR=/app/model"
 
   frontend:
     build:

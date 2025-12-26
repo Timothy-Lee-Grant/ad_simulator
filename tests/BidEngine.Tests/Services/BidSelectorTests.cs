@@ -25,8 +25,7 @@ public class BidSelectorTests
             .Options;
 
         await using var ctx = new BidEngine.Data.AppDbContext(options);
-        var embeddingOpts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>(), embeddingOpts);
+        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
         var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
@@ -51,8 +50,7 @@ public class BidSelectorTests
         ctx.Campaigns.AddRange(c1, c2);
         await ctx.SaveChangesAsync();
 
-        var embeddingOpts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>(), embeddingOpts);
+        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
         var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
@@ -79,8 +77,7 @@ public class BidSelectorTests
         ctx.Campaigns.AddRange(c1, c2);
         await ctx.SaveChangesAsync();
 
-        var embeddingOpts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>(), embeddingOpts);
+        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
         var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
@@ -107,8 +104,7 @@ public class BidSelectorTests
         ctx.Campaigns.Add(campaign);
         await ctx.SaveChangesAsync();
 
-        var embeddingOpts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>(), embeddingOpts);
+        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
         var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p", CountryCode = "US" });

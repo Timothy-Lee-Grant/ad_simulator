@@ -22,15 +22,13 @@ public class CampaignCache
     private readonly IDatabase _redis;
     private readonly AppDbContext _dbContext;
     private readonly ILogger<CampaignCache> _logger;
-    private readonly bool _allowDeterministicFallback;
     private const int CacheTtlSeconds = 300; // 5 minutes
 
-    public CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCache> logger, Microsoft.Extensions.Options.IOptions<EmbeddingOptions> opts)
+    public CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCache> logger)
     {
         _redis = db.GetDatabase();
         _dbContext = context;
         _logger = logger;
-        _allowDeterministicFallback = opts?.Value?.AllowDeterministicFallback ?? false;
     }
 
     public async Task<Campaign?> GetCampaignAsync(Guid campaignId)
@@ -152,29 +150,11 @@ public class CampaignCache
             return;
         }
         
-        // Try to use the real model if present; otherwise fall back to a deterministic
-        // embedding so local development and seeding works without the model files.
-        try
-        {
-            using var embedder = new AllMiniLmL6V2Embedder();
-            var embedding = embedder.GenerateEmbedding(video.Description).ToArray();
-            video.Embedding = new Pgvector.Vector(embedding);
-        }
-        catch (System.IO.IOException ex)
-        {
-            // If fallback is allowed for development, use deterministic embedding. Otherwise make the failure explicit.
-            if (_allowDeterministicFallback)
-            {
-                _logger.LogWarning(ex, "Model files not found, using fallback deterministic embedding for video {VideoId}", videoId);
-                var embedding = ComputeDeterministicEmbedding(video.Description);
-                video.Embedding = new Pgvector.Vector(embedding);
-            }
-            else
-            {
-                _logger.LogError(ex, "Embedder unavailable and deterministic fallback is disabled. Aborting embedding generation for video {VideoId}", videoId);
-                throw new InvalidOperationException("Native embedder not available and deterministic fallback is disabled. Provide model files in './model' or set Embeddings:AllowDeterministicFallback=true.", ex);
-            }
-        }
+        //Tim Grant - One of the suggestions which Gemini just told me to do was not to have this embedder object created each time I run this function, because this will cause my application to crash in the future if I do this many times. So it suggested the singleton pattern. I will need to implement this in the future. 
+        using var embedder = new AllMiniLmL6V2Embedder();
+        float[]? embedding = embedder.GenerateEmbedding(video.Description).ToArray();
+
+        video.Embedding = new Pgvector.Vector(embedding);
 
         await _dbContext.SaveChangesAsync();
 
@@ -183,28 +163,8 @@ public class CampaignCache
 
     public async Task GenerateEmbeddingsForAllVideos()
     {
-        // 1. Attempt to load the native model once; if it's not available, we'll
-        // use a fallback deterministic embedding generator so seeding still works.
-        AllMiniLmL6V2Embedder? embedder = null;
-        bool haveNativeEmbedder = false;
-        try
-        {
-            embedder = new AllMiniLmL6V2Embedder();
-            haveNativeEmbedder = true;
-        }
-        catch (System.IO.IOException ex)
-        {
-            if (_allowDeterministicFallback)
-            {
-                _logger.LogWarning(ex, "AllMiniLm model not found; falling back to deterministic embeddings. Place model files in './model' to use the native embedder.");
-                haveNativeEmbedder = false;
-            }
-            else
-            {
-                _logger.LogError(ex, "AllMiniLm model not found and deterministic fallback is disabled. Aborting seed run.");
-                throw new InvalidOperationException("Native embedder not available and deterministic fallback is disabled. Provide model files in './model' or set Embeddings:AllowDeterministicFallback=true.", ex);
-            }
-        }
+        // 1. Load the embedder ONCE (Singleton-style)
+        using var embedder = new AllMiniLmL6V2Embedder();
 
         // 2. Stream the videos that don't have embeddings yet
         var videoStream = _dbContext.Videos
@@ -213,78 +173,18 @@ public class CampaignCache
 
         await foreach (var video in videoStream)
         {
-            if (string.IsNullOrWhiteSpace(video.Description))
+            if (!string.IsNullOrWhiteSpace(video.Description))
             {
-                _logger.LogInformation("Skipping video {VideoId} because it has no description", video.Id);
-                continue;
+                // Generate the vector
+                var vectorArray = embedder.GenerateEmbedding(video.Description).ToArray();
+                video.Embedding = new Pgvector.Vector(vectorArray);
+                
+                Console.WriteLine($"Generated embedding for: {video.Title}");
             }
-
-            float[] vectorArray;
-            if (haveNativeEmbedder && embedder != null)
-            {
-                vectorArray = embedder.GenerateEmbedding(video.Description).ToArray();
-            }
-            else
-            {
-                vectorArray = ComputeDeterministicEmbedding(video.Description);
-            }
-
-            video.Embedding = new Pgvector.Vector(vectorArray);
-            _logger.LogInformation("Generated embedding for: {Title}", video.Title);
         }
 
         // 3. Save all changes at once at the end (or in chunks)
         await _dbContext.SaveChangesAsync();
-
-        if (embedder != null)
-        {
-            embedder.Dispose();
-        }
-    }
-
-    /// <summary>
-    /// Inserts small sample data for manual testing if the tables are empty.
-    /// This helps validate end-to-end seeding inside the container.
-    /// </summary>
-    public async Task SeedSampleDataAsync()
-    {
-        // Seed one sample video if none exist
-        if (!await _dbContext.Videos.AnyAsync())
-        {
-            _dbContext.Videos.Add(new Video
-            {
-                Title = "Sample Video for Seeding",
-                Description = "Highlights and walkthrough of the 2025 gaming tournament, featuring strategy and clips.",
-            });
-        }
-
-        // Seed one sample ad if none exist
-        if (!await _dbContext.Ads.AnyAsync())
-        {
-            _dbContext.Ads.Add(new Ad
-            {
-                Title = "Sample Ad - Gaming Gear",
-                Description = "High-performance gaming controller with low-latency haptics.",
-                CampaignId = Guid.NewGuid(),
-            });
-        }
-
-        await _dbContext.SaveChangesAsync();
-    }
-
-    private static float[] ComputeDeterministicEmbedding(string text, int dims = 384)
-    {
-        var res = new float[dims];
-        using var sha = System.Security.Cryptography.SHA256.Create();
-        for (int i = 0; i < dims; i++)
-        {
-            var input = System.Text.Encoding.UTF8.GetBytes(text + "|" + i);
-            var hash = sha.ComputeHash(input);
-            var val = BitConverter.ToInt32(hash, 0);
-            // Normalize to roughly -1..1
-            res[i] = val / (float)int.MaxValue;
-        }
-        return res;
     }
 
     //Tim Grant - I just realized that I don't really have any actual endpoints for creating and adding data from my C# into the database. 

@@ -20,14 +20,6 @@ WORKDIR /app
 
 COPY --from=builder /app .
 
-# Create a mountable model directory so users can provide model files by
-# mounting a host directory (e.g., -v ./model:/app/model) or via build-time
-# copy. We also install curl/unzip so images can fetch model artifacts at run-time if desired.
-RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/* \
-	&& mkdir -p /app/model
-
-VOLUME ["/app/model"]
-
 EXPOSE 8081
 
 ENTRYPOINT [ "dotnet", "BidEngine.dll"]
