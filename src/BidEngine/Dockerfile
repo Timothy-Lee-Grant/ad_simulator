@@ -12,6 +12,8 @@ COPY src/BidEngine/ ./src/BidEngine/
 
 RUN dotnet build -c Release src/BidEngine/BidEngine.csproj
 
+COPY src/BidEngine/model/ ./src/BidEngine/model/
+
 RUN dotnet publish  -c Release -o /app src/BidEngine/BidEngine.csproj
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
@@ -19,6 +21,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 
 COPY --from=builder /app .
+
+COPY src/BidEngine/model/ ./model/
 
 EXPOSE 8081
 

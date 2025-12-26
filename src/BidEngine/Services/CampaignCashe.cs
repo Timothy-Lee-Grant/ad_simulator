@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using AllMiniLmL6V2Sharp;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using AllMiniLmL6V2Sharp.Tokenizer;
 
 
 
@@ -151,7 +152,8 @@ public class CampaignCache
         }
         
         //Tim Grant - One of the suggestions which Gemini just told me to do was not to have this embedder object created each time I run this function, because this will cause my application to crash in the future if I do this many times. So it suggested the singleton pattern. I will need to implement this in the future. 
-        using var embedder = new AllMiniLmL6V2Embedder();
+        var tokenizer = new BertTokenizer("model/vocab.txt");
+        using var embedder = new AllMiniLmL6V2Embedder("model/model.onnx", tokenizer);
         float[]? embedding = embedder.GenerateEmbedding(video.Description).ToArray();
 
         video.Embedding = new Pgvector.Vector(embedding);
@@ -163,8 +165,9 @@ public class CampaignCache
 
     public async Task GenerateEmbeddingsForAllVideos()
     {
+        var tokenizer = new BertTokenizer("model/vocab.txt");
         // 1. Load the embedder ONCE (Singleton-style)
-        using var embedder = new AllMiniLmL6V2Embedder();
+        using var embedder = new AllMiniLmL6V2Embedder("model/model.onnx", tokenizer);
 
         // 2. Stream the videos that don't have embeddings yet
         var videoStream = _dbContext.Videos
