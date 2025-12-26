@@ -160,10 +160,31 @@ public class CampaignCache
 
 
     }
-    public async Task CreateVectorForAllVideos()
+
+    public async Task GenerateEmbeddingsForAllVideos()
     {
-        var _db
-        foreach()
+        // 1. Load the embedder ONCE (Singleton-style)
+        using var embedder = new AllMiniLmL6V2Embedder();
+
+        // 2. Stream the videos that don't have embeddings yet
+        var videoStream = _dbContext.Videos
+            .Where(v => v.Embedding == null)
+            .AsAsyncEnumerable(); 
+
+        await foreach (var video in videoStream)
+        {
+            if (!string.IsNullOrWhiteSpace(video.Description))
+            {
+                // Generate the vector
+                var vectorArray = embedder.GenerateEmbedding(video.Description).ToArray();
+                video.Embedding = new Pgvector.Vector(vectorArray);
+                
+                Console.WriteLine($"Generated embedding for: {video.Title}");
+            }
+        }
+
+        // 3. Save all changes at once at the end (or in chunks)
+        await _dbContext.SaveChangesAsync();
     }
 
     //Tim Grant - I just realized that I don't really have any actual endpoints for creating and adding data from my C# into the database. 

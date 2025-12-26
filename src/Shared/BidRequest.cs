@@ -37,6 +37,7 @@ public class BidRequest
     //public string? AssumedGender {get; set;}
     // I am creating a dictionary which gives the gender and the associated confidence of that guess.
     public Dictionary<string, int>? AssumedGender {get; set;}
+    public Guid? VideoId {get; set;} = null;
 }
 
 public class BidResponse
