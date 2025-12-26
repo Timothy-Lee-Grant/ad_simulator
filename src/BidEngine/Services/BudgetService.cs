@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BidEngine.Services;
 
+
 /// <summary>
 /// Manages campaign budget tracking and deduction.
 /// 

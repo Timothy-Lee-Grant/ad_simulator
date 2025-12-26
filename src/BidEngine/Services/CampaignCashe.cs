@@ -4,12 +4,21 @@ using StackExchange.Redis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using AllMiniLmL6V2Sharp;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+
 
 
 namespace BidEngine.Services;
 
 public class CampaignCache
 {
+    //Tim Grant I am considering what architecture in the C# code I should use. 
+    //Because I am going to be connecting to the same postgres database And to the same Redis database for both my semantics search and my normal highest bidding auction. 
+    //I think it makes sense for me to put all of the logic for the database connections into the same class.
+    //Instead of having two separate functions that both have connections to the exact same database.
+    //But this might mean that I should rename my class to be something more generic, because right now the name does not necessarily indicate what it's actually doing.  
+    //Gemini suggests naming the class AdEngineDataService
     private readonly IDatabase _redis;
     private readonly AppDbContext _dbContext;
     private readonly ILogger<CampaignCache> _logger;
@@ -116,5 +125,69 @@ public class CampaignCache
         await _redis.KeyDeleteAsync("campaigns::active::all");
         _logger.LogInformation("Invalidated cache for campaign {CampaignId}", campaignId);
     }
+
+    public async Task<Pgvector.Vector?> FindVectorFromVideoId(Guid videoId)
+    {
+        //var result = await _dbContext.Videos.Include(something=>something.Embedding).Where(s=>s.VideoId).GetAsync();
+        //var result = await _dbContext.Videos.Where(passedInParameter.Id == videoId).SingleOrDefaultAsync();
+        
+        var video = await _dbContext.Videos
+        .AsNoTracking() // Performance boost: we aren't changing the data, just reading
+        .Where(v => v.Id == videoId)
+        .Select(v => new { v.Embedding }) // Optional: Only pull the vector from SQL, not the whole row
+        .FirstOrDefaultAsync();
+
+        return video?.Embedding;
+    }
+
+    public async Task CreateVectorFromVideoId(Guid videoId)
+    {
+
+        var video = await _dbContext.Videos.FindAsync(videoId);
+
+        if(video is null || string.IsNullOrWhiteSpace(video.Description))
+        {
+            return;
+        }
+        
+        //Tim Grant - One of the suggestions which Gemini just told me to do was not to have this embedder object created each time I run this function, because this will cause my application to crash in the future if I do this many times. So it suggested the singleton pattern. I will need to implement this in the future. 
+        using var embedder = new AllMiniLmL6V2Embedder();
+        float[]? embedding = embedder.GenerateEmbedding(video.Description).ToArray();
+
+        video.Embedding = new Pgvector.Vector(embedding);
+
+        await _dbContext.SaveChangesAsync();
+
+
+    }
+
+    public async Task GenerateEmbeddingsForAllVideos()
+    {
+        // 1. Load the embedder ONCE (Singleton-style)
+        using var embedder = new AllMiniLmL6V2Embedder();
+
+        // 2. Stream the videos that don't have embeddings yet
+        var videoStream = _dbContext.Videos
+            .Where(v => v.Embedding == null)
+            .AsAsyncEnumerable(); 
+
+        await foreach (var video in videoStream)
+        {
+            if (!string.IsNullOrWhiteSpace(video.Description))
+            {
+                // Generate the vector
+                var vectorArray = embedder.GenerateEmbedding(video.Description).ToArray();
+                video.Embedding = new Pgvector.Vector(vectorArray);
+                
+                Console.WriteLine($"Generated embedding for: {video.Title}");
+            }
+        }
+
+        // 3. Save all changes at once at the end (or in chunks)
+        await _dbContext.SaveChangesAsync();
+    }
+
+    //Tim Grant - I just realized that I don't really have any actual endpoints for creating and adding data from my C# into the database. 
+    //If I did this, I would need to give the user a frontend to be able to actually perform those operations. This is something I have not built out yet but might be valuable in the future. 
     
 }
