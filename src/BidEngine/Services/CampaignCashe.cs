@@ -22,13 +22,15 @@ public class CampaignCache
     private readonly IDatabase _redis;
     private readonly AppDbContext _dbContext;
     private readonly ILogger<CampaignCache> _logger;
+    private readonly bool _allowDeterministicFallback;
     private const int CacheTtlSeconds = 300; // 5 minutes
 
-    public CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCache> logger)
+    public CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCache> logger, Microsoft.Extensions.Options.IOptions<EmbeddingOptions> opts)
     {
         _redis = db.GetDatabase();
         _dbContext = context;
         _logger = logger;
+        _allowDeterministicFallback = opts?.Value?.AllowDeterministicFallback ?? false;
     }
 
     public async Task<Campaign?> GetCampaignAsync(Guid campaignId)
@@ -158,11 +160,20 @@ public class CampaignCache
             var embedding = embedder.GenerateEmbedding(video.Description).ToArray();
             video.Embedding = new Pgvector.Vector(embedding);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.IOException ex)
         {
-            _logger.LogWarning(ex, "Model files not found, using fallback deterministic embedding for video {VideoId}", videoId);
-            var embedding = ComputeDeterministicEmbedding(video.Description);
-            video.Embedding = new Pgvector.Vector(embedding);
+            // If fallback is allowed for development, use deterministic embedding. Otherwise make the failure explicit.
+            if (_allowDeterministicFallback)
+            {
+                _logger.LogWarning(ex, "Model files not found, using fallback deterministic embedding for video {VideoId}", videoId);
+                var embedding = ComputeDeterministicEmbedding(video.Description);
+                video.Embedding = new Pgvector.Vector(embedding);
+            }
+            else
+            {
+                _logger.LogError(ex, "Embedder unavailable and deterministic fallback is disabled. Aborting embedding generation for video {VideoId}", videoId);
+                throw new InvalidOperationException("Native embedder not available and deterministic fallback is disabled. Provide model files in './model' or set Embeddings:AllowDeterministicFallback=true.", ex);
+            }
         }
 
         await _dbContext.SaveChangesAsync();
@@ -183,8 +194,16 @@ public class CampaignCache
         }
         catch (System.IO.IOException ex)
         {
-            _logger.LogWarning(ex, "AllMiniLm model not found; falling back to deterministic embeddings. Place model files in './model' to use the native embedder.");
-            haveNativeEmbedder = false;
+            if (_allowDeterministicFallback)
+            {
+                _logger.LogWarning(ex, "AllMiniLm model not found; falling back to deterministic embeddings. Place model files in './model' to use the native embedder.");
+                haveNativeEmbedder = false;
+            }
+            else
+            {
+                _logger.LogError(ex, "AllMiniLm model not found and deterministic fallback is disabled. Aborting seed run.");
+                throw new InvalidOperationException("Native embedder not available and deterministic fallback is disabled. Provide model files in './model' or set Embeddings:AllowDeterministicFallback=true.", ex);
+            }
         }
 
         // 2. Stream the videos that don't have embeddings yet
@@ -221,6 +240,36 @@ public class CampaignCache
         {
             embedder.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Inserts small sample data for manual testing if the tables are empty.
+    /// This helps validate end-to-end seeding inside the container.
+    /// </summary>
+    public async Task SeedSampleDataAsync()
+    {
+        // Seed one sample video if none exist
+        if (!await _dbContext.Videos.AnyAsync())
+        {
+            _dbContext.Videos.Add(new Video
+            {
+                Title = "Sample Video for Seeding",
+                Description = "Highlights and walkthrough of the 2025 gaming tournament, featuring strategy and clips.",
+            });
+        }
+
+        // Seed one sample ad if none exist
+        if (!await _dbContext.Ads.AnyAsync())
+        {
+            _dbContext.Ads.Add(new Ad
+            {
+                Title = "Sample Ad - Gaming Gear",
+                Description = "High-performance gaming controller with low-latency haptics.",
+                CampaignId = Guid.NewGuid(),
+            });
+        }
+
+        await _dbContext.SaveChangesAsync();
     }
 
     private static float[] ComputeDeterministicEmbedding(string text, int dims = 384)

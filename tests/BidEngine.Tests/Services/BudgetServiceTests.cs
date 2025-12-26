@@ -22,7 +22,8 @@ public class BudgetServiceTests
         var conn = new Mock<StackExchange.Redis.IConnectionMultiplexer>();
         var db = new Mock<StackExchange.Redis.IDatabase>();
         conn.Setup(c => c.GetDatabase(It.IsAny<int>(), It.IsAny<object>())).Returns(db.Object);
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
+        var embeddingOpts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
+        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>(), embeddingOpts);
         var svc = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache);
 
         var res = await svc.DeductBudgetAsync(Guid.NewGuid(), 10m);
@@ -45,7 +46,8 @@ public class BudgetServiceTests
         var db2 = new Mock<StackExchange.Redis.IDatabase>();
         conn2.Setup(c => c.GetDatabase(It.IsAny<int>(), It.IsAny<object>())).Returns(db2.Object);
 
-        var cache2 = new CampaignCache(conn2.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
+        var embeddingOpts2 = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
+        var cache2 = new CampaignCache(conn2.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>(), embeddingOpts2);
         var svc2 = new BudgetService(ctx, conn2.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache2);
 
         var res = await svc2.DeductBudgetAsync(campaign.Id, 2000m / 1000m); // cpm/n -> cost per impression

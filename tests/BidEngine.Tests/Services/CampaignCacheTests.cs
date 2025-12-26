@@ -35,7 +35,8 @@ public class CampaignCacheTests
 
         await using var ctx = new BidEngine.Data.AppDbContext(options);
 
-        var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger);
+        var opts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
+        var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger, opts);
 
         var res = await cache.GetCampaignAsync(campaign.Id);
 
@@ -66,7 +67,8 @@ public class CampaignCacheTests
         ctx.Campaigns.Add(campaign);
         await ctx.SaveChangesAsync();
 
-        var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger);
+        var opts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
+        var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger, opts);
 
         var res = await cache.GetActiveCampaignsAsync();
 
@@ -88,7 +90,8 @@ public class CampaignCacheTests
             .Options;
 
         await using var ctx = new BidEngine.Data.AppDbContext(options);
-        var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger);
+        var opts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
+        var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger, opts);
 
         var id = Guid.NewGuid();
         await cache.InvalidateCampaignAsync(id);
@@ -124,7 +127,8 @@ public class CampaignCacheTests
                 ctx.Campaigns.Add(campaign);
                 await ctx.SaveChangesAsync();
 
-                var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger);
+                var opts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
+                var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger, opts);
 
                 var res = await cache.GetCampaignAsync(campaign.Id);
 
@@ -177,7 +181,8 @@ public class CampaignCacheTests
                 ctx.Campaigns.Add(campaign);
                 await ctx.SaveChangesAsync();
 
-                var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger);
+                var opts = Microsoft.Extensions.Options.Options.Create(new BidEngine.Services.EmbeddingOptions { AllowDeterministicFallback = true });
+                var cache = new CampaignCache(conn.Object, ctx, (Microsoft.Extensions.Logging.ILogger<CampaignCache>)logger, opts);
 
                 var res = await cache.GetActiveCampaignsAsync();
 
@@ -185,8 +190,8 @@ public class CampaignCacheTests
                 res.Should().ContainSingle(c => c.Id == campaign.Id);
 
                 // also assert serialization with cycle-safe options succeeds independently
-                var opts = new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles };
-                var json = JsonSerializer.Serialize(campaign, opts);
+                var jsonOpts = new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles };
+                var json = JsonSerializer.Serialize(campaign, jsonOpts);
                 json.Should().Contain(campaign.Id.ToString());
         }
 }
