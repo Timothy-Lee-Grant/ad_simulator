@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using AllMiniLmL6V2Sharp;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 
 
@@ -141,28 +142,28 @@ public class CampaignCache
 
     public async Task CreateVectorFromVideoId(Guid videoId)
     {
-        /*
-        string? videoDescription = await _dbContext.Videos
-            .Select(v => v.Description)
-            .Where(v => v.Id == videoId)
-            .FirstOrDefaultAsync();
-        */
-        string? videoDescription = await _dbContext.Videos
-        .Where(v => v.Id == videoId)
-        .Select(v => v.Description) 
-        .FirstOrDefaultAsync();
 
-        if(videoDescription is not null)
+        var video = await _dbContext.Videos.FindAsync(videoId);
+
+        if(video is null || string.IsNullOrWhiteSpace(video.Description))
         {
-            //Tim Grant - One of the suggestions which Gemini just told me to do was not to have this embedder object created each time I run this function, because this will cause my application to crash in the future if I do this many times. So it suggested the singleton pattern. I will need to implement this in the future. 
-            using var embedder = new AllMiniLmL6V2Embedder();
-            float[] embedding = embedder.GenerateEmbedding(videoDescription).ToArray();
+            return;
         }
-        return;
+        
+        //Tim Grant - One of the suggestions which Gemini just told me to do was not to have this embedder object created each time I run this function, because this will cause my application to crash in the future if I do this many times. So it suggested the singleton pattern. I will need to implement this in the future. 
+        using var embedder = new AllMiniLmL6V2Embedder();
+        float[]? embedding = embedder.GenerateEmbedding(video.Description).ToArray();
+
+        video.Embedding = new Pgvector.Vector(embedding);
+
+        await _dbContext.SaveChangesAsync();
+
+
     }
     public async Task CreateVectorForAllVideos()
     {
-        return;
+        var _db
+        foreach()
     }
 
     //Tim Grant - I just realized that I don't really have any actual endpoints for creating and adding data from my C# into the database. 
