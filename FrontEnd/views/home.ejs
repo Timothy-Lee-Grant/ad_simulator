@@ -12,6 +12,7 @@
   <body>
     <header class="hero">
       <div class="hero-inner">
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
         <h1>AdSimulator</h1>
         <p class="tagline">A small demo ad-serving stack — browse ads, test click tracking, and iterate on bidding algorithms.</p>
         <div class="features">
@@ -60,5 +61,32 @@
     <footer class="footer">
       <small>AdSimulator — Local demo • <a href="/">Refresh</a></small>
     </footer>
+    <script>
+      (function(){
+        const toggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        const storageKey = 'theme';
+        function applyTheme(theme){
+          if(theme === 'light'){
+            body.setAttribute('data-theme','light');
+            toggle.textContent = '🌞';
+          } else {
+            body.removeAttribute('data-theme');
+            toggle.textContent = '🌙';
+          }
+        }
+        let theme = localStorage.getItem(storageKey);
+        if(!theme){
+          const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+          theme = prefersLight ? 'light' : 'dark';
+        }
+        applyTheme(theme);
+        toggle.addEventListener('click', function(){
+          theme = theme === 'light' ? 'dark' : 'light';
+          localStorage.setItem(storageKey, theme);
+          applyTheme(theme);
+        });
+      })();
+    </script>
   </body>
 </html>

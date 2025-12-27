@@ -11,6 +11,30 @@
   --glass-blur: 10px;
 }
 
+/* Light theme (previous site look) */
+body[data-theme="light"]{
+  --bg: #f6f8fb;
+  --panel: #ffffff;
+  --panel-2: #ffffff;
+  --muted: #6b7280;
+  --text: #111111;
+  --accent-from: #0ea5a4; /* teal */
+  --accent-to: #2563eb; /* blue */
+  --accent-gradient: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+  --glass-blur: 0px;
+}
+
+/* Light-mode specific overrides */
+body[data-theme="light"]{background:var(--bg);color:var(--text)}
+body[data-theme="light"] .hero{background:linear-gradient(90deg, rgba(37,99,235,0.95), rgba(14,165,164,0.95));color:#fff}
+body[data-theme="light"] .feature{background:rgba(255,255,255,0.06);box-shadow:none}
+body[data-theme="light"] .ad-card{background:var(--panel);box-shadow:0 6px 18px rgba(17,24,39,0.06);border:0}
+body[data-theme="light"] .ad-desc{color:var(--muted)}
+body[data-theme="light"] .cta{background:var(--accent-to);color:#fff}
+body[data-theme="light"] .ad-media img{filter:none}
+body[data-theme="light"] .feature{color:#fff}
+body[data-theme="light"] body::before, body[data-theme="light"] body::after{opacity:0.6;filter:blur(80px)}
+
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -61,6 +85,10 @@ body::after{
 .tagline{margin-top:.5rem;opacity:.85;color:var(--muted)}
 .features{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem}
 .feature{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.015));padding:.45rem .7rem;border-radius:8px;font-size:.9rem;border:1px solid rgba(124,77,255,0.04);box-shadow:0 2px 6px rgba(0,0,0,0.6)}
+
+/* Theme toggle button */
+.theme-toggle{position:absolute;top:0.9rem;right:0.9rem;padding:8px 10px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text);border-radius:8px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;gap:.4rem}
+.theme-toggle:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,0.45)}
 
 .intro h2{margin:1.25rem 0 .25rem}
 
