@@ -191,62 +191,104 @@ public class CampaignCache
     }
 
 
-public async Task GenerateEmbeddingsForAllVideosWithDebugging()
-{
-    _logger.LogInformation("Starting bulk vectorization...");
-
-    var tokenizer = new BertTokenizer("model/vocab.txt");
-    using var embedder = new AllMiniLmL6V2Embedder("model/model.onnx", tokenizer);
-
-    // FIX: Pull all videos into memory first so we don't confuse the SQL translator
-    // We use .ToListAsync() to execute the SQL immediately and get the objects into C#
-    var allVideos = await _dbContext.Videos.ToListAsync();
-    
-    _logger.LogInformation("Checking {Count} videos for missing or default embeddings.", allVideos.Count);
-
-    int processedCount = 0;
-
-    foreach (var video in allVideos)
+    public async Task GenerateEmbeddingsForAllVideosWithDebugging()
     {
-        // Check if it's null OR contains our 'default' 0.15 value
-        bool needsUpdate = video.Embedding == null || 
-                          (video.Embedding.ToArray().Length > 0 && video.Embedding.ToArray()[0] == 0.15f);
+        _logger.LogInformation("Starting bulk vectorization...");
 
-        if (needsUpdate && !string.IsNullOrWhiteSpace(video.Description))
+        var tokenizer = new BertTokenizer("model/vocab.txt");
+        using var embedder = new AllMiniLmL6V2Embedder("model/model.onnx", tokenizer);
+
+        // FIX: Pull all videos into memory first so we don't confuse the SQL translator
+        // We use .ToListAsync() to execute the SQL immediately and get the objects into C#
+        var allVideos = await _dbContext.Videos.ToListAsync();
+        
+        _logger.LogInformation("Checking {Count} videos for missing or default embeddings.", allVideos.Count);
+
+        int processedCount = 0;
+
+        foreach (var video in allVideos)
         {
-            try 
+            // Check if it's null OR contains our 'default' 0.15 value
+            bool needsUpdate = video.Embedding == null || 
+                            (video.Embedding.ToArray().Length > 0 && video.Embedding.ToArray()[0] == 0.15f);
+
+            if (needsUpdate && !string.IsNullOrWhiteSpace(video.Description))
             {
-                var vectorArray = embedder.GenerateEmbedding(video.Description).ToArray();
-                video.Embedding = new Pgvector.Vector(vectorArray);
-                
-                // Explicitly tell EF Core this specific video was changed
-                _dbContext.Entry(video).State = EntityState.Modified;
-                
-                processedCount++;
-                _logger.LogInformation("Generated real vector for: {Title}", video.Title);
+                try 
+                {
+                    var vectorArray = embedder.GenerateEmbedding(video.Description).ToArray();
+                    video.Embedding = new Pgvector.Vector(vectorArray);
+                    
+                    // Explicitly tell EF Core this specific video was changed
+                    _dbContext.Entry(video).State = EntityState.Modified;
+                    
+                    processedCount++;
+                    _logger.LogInformation("Generated real vector for: {Title}", video.Title);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error embedding video: {Title}", video.Title);
+                }
             }
-            catch (Exception ex)
+            // Fix the DateTime Kind if it's unspecified
+            if (video.CreatedAt.Kind == DateTimeKind.Unspecified)
             {
-                _logger.LogError(ex, "Error embedding video: {Title}", video.Title);
+                video.CreatedAt = DateTime.SpecifyKind(video.CreatedAt, DateTimeKind.Utc);
             }
         }
-        // Fix the DateTime Kind if it's unspecified
-        if (video.CreatedAt.Kind == DateTimeKind.Unspecified)
+
+        if (processedCount > 0)
         {
-            video.CreatedAt = DateTime.SpecifyKind(video.CreatedAt, DateTimeKind.Utc);
+            var savedRows = await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("SUCCESS: Database updated. Videos vectorized: {Processed}, Rows affected: {Saved}", processedCount, savedRows);
+        }
+        else
+        {
+            _logger.LogInformation("No videos required updating.");
         }
     }
 
-    if (processedCount > 0)
+    public async Task GenerateEmbeddingsForAllAds()
     {
-        var savedRows = await _dbContext.SaveChangesAsync();
-        _logger.LogInformation("SUCCESS: Database updated. Videos vectorized: {Processed}, Rows affected: {Saved}", processedCount, savedRows);
+        var allAds = await _dbContext.Ads.ToListAsync();
+        var tokenizer = new BertTokenizer("model/vocab.txt");
+        using var embedder = new AllMiniLmL6V2Embedder("model/model.onnx", tokenizer);
+
+        int processedCount = 0;
+        _logger.LogInformation("Checking {Count} videos for missing or default embeddings.", allAds.Count);
+
+        foreach(var singleAd in allAds)
+        {
+            try
+            {
+                //skip if no description
+                if(string.IsNullOrWhiteSpace(singleAd.Description)) continue;
+                var singleEmbedding = embedder.GenerateEmbedding(singleAd.Description).ToArray(); //Why do we need to specify to array here? What does this call actually accomplish? 
+                singleAd.Embedding = new Pgvector.Vector(singleEmbedding); //Why do I need to add new to these lines of code? What is the rule for when I add a new and when I do not add a new? 
+                if(singleAd.CreatedAt.Kind == DateTimeKind.Unspecified)
+                {
+                    singleAd.CreatedAt = DateTime.SpecifyKind(singleAd.CreatedAt, DateTimeKind.Utc);
+                }
+                _dbContext.Entry(singleAd).State = EntityState.Modified;
+                _logger.LogInformation("Generated real vector for: {Title}", singleAd.Title);
+                processedCount+=1;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Error embedding video: {Title}", singleAd.Title);
+            }
+        }
+
+        if (processedCount > 0)
+        {
+            var savedRows = await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("SUCCESS: Database updated. Videos vectorized: {Processed}, Rows affected: {Saved}", processedCount, savedRows);
+        }
+        else
+        {
+            _logger.LogInformation("No videos required updating.");
+        }
     }
-    else
-    {
-        _logger.LogInformation("No videos required updating.");
-    }
-}
 
     //Tim Grant - I just realized that I don't really have any actual endpoints for creating and adding data from my C# into the database. 
     //If I did this, I would need to give the user a frontend to be able to actually perform those operations. This is something I have not built out yet but might be valuable in the future. 
