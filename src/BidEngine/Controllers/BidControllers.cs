@@ -165,4 +165,11 @@ public class AdminController : ControllerBase
         await _dataService.GenerateEmbeddingsForAllVideos();
         return Ok("The vectorization has been completed. ");
     }
+
+    [HttpPost("seed-vectors-with-debugging")]
+    public async Task<IActionResult> SeedVectorsWithDebug()
+    {
+        await _dataService.GenerateEmbeddingsForAllVideosWithDebugging();
+        return Ok("The vectorization has been completed. ");
+    }
 }

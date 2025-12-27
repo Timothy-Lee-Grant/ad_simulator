@@ -171,7 +171,7 @@ public class CampaignCache
 
         // 2. Stream the videos that don't have embeddings yet
         var videoStream = _dbContext.Videos
-            .Where(v => v.Embedding == null)
+            .Where(v => v.Embedding == null || v.Embedding.ToArray()[0] == 0.15f)
             .AsAsyncEnumerable(); 
 
         await foreach (var video in videoStream)
@@ -188,6 +188,59 @@ public class CampaignCache
 
         // 3. Save all changes at once at the end (or in chunks)
         await _dbContext.SaveChangesAsync();
+    }
+
+
+    public async Task GenerateEmbeddingsForAllVideosWithDebugging()
+    {
+        _logger.LogInformation("Starting bulk vectorization...");
+
+        var tokenizer = new BertTokenizer("model/vocab.txt");
+        using var embedder = new AllMiniLmL6V2Embedder("model/model.onnx", tokenizer);
+
+        // 1. Fetch ALL IDs of videos that need vectors first
+        // This avoids "Connection already in use" errors during streaming
+        var videoIds = await _dbContext.Videos
+            .Where(v => v.Embedding == null || v.Embedding.ToArray()[0] == 0.15f) // Include the '0.15' ones
+            .Select(v => v.Id)
+            .ToListAsync();
+
+        _logger.LogInformation("Found {Count} videos to process.", videoIds.Count);
+
+        foreach (var id in videoIds)
+        {
+            // Fetch the specific video to ensure it's tracked
+            var video = await _dbContext.Videos.FindAsync(id);
+            
+            if (video == null || string.IsNullOrWhiteSpace(video.Description)) continue;
+
+            try 
+            {
+                var vectorArray = embedder.GenerateEmbedding(video.Description).ToArray();
+                
+                // DEBUG: Check if the model is actually giving us real numbers
+                if (vectorArray.Length > 0)
+                {
+                    _logger.LogDebug("First 3 dims for {Title}: {v1}, {v2}, {v3}", 
+                        video.Title, vectorArray[0], vectorArray[1], vectorArray[2]);
+                }
+
+                video.Embedding = new Pgvector.Vector(vectorArray);
+                
+                // FORCE EF Core to see this as modified
+                _dbContext.Entry(video).State = EntityState.Modified;
+
+                _logger.LogInformation("Processed: {Title}", video.Title);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate embedding for video {Id}", id);
+            }
+        }
+
+        // 2. Save and capture the number of rows affected
+        var rows = await _dbContext.SaveChangesAsync();
+        _logger.LogInformation("SUCCESS: Database updated. Rows affected: {Rows}", rows);
     }
 
     //Tim Grant - I just realized that I don't really have any actual endpoints for creating and adding data from my C# into the database. 
