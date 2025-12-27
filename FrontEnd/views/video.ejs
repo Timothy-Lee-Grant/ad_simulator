@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= video.title %> — AdSimulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-inner">
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+        <h1><%= video.title %></h1>
+        <p class="tagline"><%= video.description || 'Video playback simulation' %></p>
+      </div>
+    </header>
+
+    <main class="container video-page">
+      <div class="video-wrapper">
+        <div class="video-player">
+          <!-- Placeholder GIF as simulated video -->
+          <img src="https://media.giphy.com/media/5xaOcLGvzHxDKjufnLW/giphy.gif" alt="<%= video.title %>" />
+        </div>
+
+        <aside class="ad-pane">
+          <h2>Sponsored</h2>
+          <% if (ad) { %>
+            <article class="ad-card ad-pane-card">
+              <div class="ad-media"><img src="<%= ad.adContent?.imageUrl || 'https://via.placeholder.com/400x220.png?text=Sponsored' %>" alt="<%= ad.adContent?.title %>" /></div>
+              <div class="ad-body">
+                <h3><%= ad.adContent?.title || 'Sponsored' %></h3>
+                <p class="ad-desc"><%= ad.adContent?.description || '' %></p>
+                <div class="ad-meta">
+                  <span class="bid">Bid: <strong><%= ad.bidPrice %></strong></span>
+                  <% if (ad.adContent?.redirectUrl) { %>
+                    <a class="cta" href="/click?redirect=<%= encodeURIComponent(ad.adContent?.redirectUrl) %>&campaignId=<%= ad.campaignId %>&adId=<%= ad.adId %>&userId=<%= userId %>">Open Ad</a>
+                  <% } %>
+                </div>
+              </div>
+            </article>
+          <% } else { %>
+            <div class="no-ads">No ad returned for this video. Try refreshing or come back later.</div>
+          <% } %>
+        </aside>
+      </div>
+
+      <section class="about">
+        <h2>About this demo</h2>
+        <p>This page simulates a video player and a targeted ad call to the BidEngine. The ad may not always be available — the UI handles that case gracefully.</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <small><a href="/">← Back</a></small>
+    </footer>
+
+    <script>
+      (function(){
+        const toggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        const storageKey = 'theme';
+        function applyTheme(theme){
+          if(theme === 'light'){
+            body.setAttribute('data-theme','light');
+            toggle.textContent = '🌞';
+          } else {
+            body.removeAttribute('data-theme');
+            toggle.textContent = '🌙';
+          }
+        }
+        let theme = localStorage.getItem(storageKey) || 'dark';
+        applyTheme(theme);
+        toggle.addEventListener('click', function(){
+          theme = theme === 'light' ? 'dark' : 'light';
+          localStorage.setItem(storageKey, theme);
+          applyTheme(theme);
+        });
+      })();
+    </script>
+  </body>
+</html>

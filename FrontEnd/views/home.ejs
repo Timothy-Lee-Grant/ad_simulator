@@ -30,6 +30,26 @@
         <p>Below are up to two ads selected by the bid engine for you (user <code><%= userId %></code>).</p>
       </section>
 
+      <% if (videos && videos.length > 0) { %>
+        <section class="videos-section">
+          <h2>Featured Videos</h2>
+          <p>Click a video to open the simulated video player and a targeted ad.</p>
+          <div class="videos-grid">
+            <% videos.forEach(function(video){ %>
+              <a class="video-card" href="/videos/<%= video.id %>">
+                <div class="video-thumb">
+                    <img src="https://media.giphy.com/media/5xaOcLGvzHxDKjufnLW/giphy.gif" alt="<%= video.title %>" />
+                  </div>
+                <div class="video-info">
+                  <h3><%= video.title %></h3>
+                  <p class="video-desc"><%= video.description || '' %></p>
+                </div>
+              </a>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
       <% if (ads.length === 0) { %>
         <div class="no-ads">No ads returned for the current placement.</div>
       <% } else { %>

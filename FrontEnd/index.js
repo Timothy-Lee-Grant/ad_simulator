@@ -34,10 +34,54 @@ app.get('/', async (req, res) => {
     const [ad1, ad2] = await Promise.all([fetchBid(), fetchBid()]);
     const ads = [ad1, ad2].filter(Boolean);
 
-    res.render('home', { ads, userId });
+    // Fetch up to three videos to display on the homepage
+    let videos = [];
+    try {
+      const vres = await fetch(`${BID_ENGINE_URL}/api/videos?limit=3`);
+      if (vres.ok) videos = await vres.json();
+    } catch (e) {
+      console.error('Failed to fetch videos', e);
+    }
+
+    res.render('home', { ads, userId, videos });
   } catch (err) {
     console.error('Error fetching bids:', err);
     res.status(502).send('Bid engine unreachable');
+  }
+});
+
+// Video detail page: shows simulated video on left and an ad on right
+app.get('/videos/:id', async (req, res) => {
+  const videoId = req.params.id;
+  const userId = req.query.userId || 'user_local_123';
+
+  try {
+    const vResp = await fetch(`${BID_ENGINE_URL}/api/videos/${videoId}`);
+    if (!vResp.ok) return res.status(404).send('Video not found');
+    const video = await vResp.json();
+
+    // Request a bid that includes the videoId so the BidEngine routes to semantic search
+    let ad = null;
+    try {
+      const bResp = await fetch(`${BID_ENGINE_URL}/api/bid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, placementId: 'video_page', videoId })
+      });
+
+      if (bResp.status === 204) {
+        ad = null; // no ad returned
+      } else if (bResp.ok) {
+        ad = await bResp.json();
+      }
+    } catch (e) {
+      console.error('Failed to fetch ad for video page', e);
+    }
+
+    res.render('video', { video, ad, userId });
+  } catch (err) {
+    console.error('Error rendering video page', err);
+    res.status(500).send('Server error');
   }
 });
 
