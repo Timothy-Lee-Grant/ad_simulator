@@ -68,7 +68,38 @@ public class BidSelector
         );
         BidResponse? result=null;
 
+        if(request.VideoId == null)
+        {
+            return await SelectWinningBidAsyncAlgorithm1(request);
+        }
 
+        var videoVector = await _cashe.FindVectorFromVideoId(request.VideoId.Value);
+
+        //perform semantic search
+        var topAds = await _cashe.PerformSematicSearchForTop3Ads(videoVector);
+
+        if (topAds == null || !topAds.Any())
+        {
+            return null;
+        }
+
+        var winner = topAds.First();
+
+        result = new BidResponse
+        {
+            AdId = winner.Id,
+            AdContent = new AdContent
+            {
+                Title = winner.Title,
+                ImageUrl = winner.ImageUrl,
+                RedirectUrl = winner.RedirectUrl,
+                Description = winner.Description
+            },
+            CampaignId = winner.CampaignId,
+            //Tim Grant - As of now, bid price is hard-coded. In the future, I will need to go in and check the campaign ID and from that get the database search to find what the actual bid price of that ad was. 
+            BidPrice = 3,
+            Confidence = 8      
+        };
 
         return result;
     }
