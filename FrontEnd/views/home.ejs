@@ -77,8 +77,8 @@
         }
         let theme = localStorage.getItem(storageKey);
         if(!theme){
-          const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-          theme = prefersLight ? 'light' : 'dark';
+          // Default to dark to preserve current Obsidian look unless user explicitly chooses light
+          theme = 'dark';
         }
         applyTheme(theme);
         toggle.addEventListener('click', function(){
