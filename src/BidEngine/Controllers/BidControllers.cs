@@ -146,3 +146,30 @@ public class BidController : ControllerBase
 
     
 }
+
+[ApiController]
+[Route("api/[controller]")]
+public class AdminController : ControllerBase
+{
+    //private readonly AdEngineDataService _dataService;
+    private readonly CampaignCache _dataService;
+
+    public AdminController(CampaignCache dataService)
+    {
+        _dataService = dataService;
+    }
+
+    [HttpPost("seed-vectors")]
+    public async Task<IActionResult> SeedVectors()
+    {
+        await _dataService.GenerateEmbeddingsForAllVideos();
+        return Ok("The vectorization has been completed. ");
+    }
+
+    [HttpPost("seed-vectors-with-debugging")]
+    public async Task<IActionResult> SeedVectorsWithDebug()
+    {
+        await _dataService.GenerateEmbeddingsForAllVideosWithDebugging();
+        return Ok("The vectorization has been completed. ");
+    }
+}

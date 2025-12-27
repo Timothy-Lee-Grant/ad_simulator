@@ -32,42 +32,48 @@ services:
       timeout: 5s
       retries: 5
 
-  # Zookeeper (required for Kafka)
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: ads_zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-    healthcheck:
-      test: ["CMD", "echo", "ruok", "|", "nc", "127.0.0.1", "2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # Kafka and Zookeeper are optional for this repository. Their full service
+  # definitions live in `docker-compose.kafka.yml`. Running the main
+  # `docker compose up` will NOT start Kafka by default to avoid extra
+  # resource usage during development. To enable Kafka locally either:
+  #  - Run with the override file: `docker compose -f docker-compose.yml -f docker-compose.kafka.yml up -d`
+  #  - Or uncomment the service blocks below and run `docker compose up -d`.
 
-  # Kafka Message Broker
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: ads_kafka
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-      KAFKA_NUM_PARTITIONS: 10
-    ports:
-      - "9092:9092"
-    healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # -- optional Kafka (uncomment to enable) --
+  # zookeeper:
+  #   image: confluentinc/cp-zookeeper:7.5.0
+  #   container_name: ads_zookeeper
+  #   environment:
+  #     ZOOKEEPER_CLIENT_PORT: 2181
+  #     ZOOKEEPER_TICK_TIME: 2000
+  #   ports:
+  #     - "2181:2181"
+  #   healthcheck:
+  #     test: ["CMD", "echo", "ruok", "|", "nc", "127.0.0.1", "2181"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # kafka:
+  #   image: confluentinc/cp-kafka:7.5.0
+  #   container_name: ads_kafka
+  #   depends_on:
+  #     zookeeper:
+  #       condition: service_healthy
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #     KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+  #     KAFKA_NUM_PARTITIONS: 10
+  #   ports:
+  #     - "9092:9092"
+  #   healthcheck:
+  #     test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
   # Prometheus Metrics Storage
   prometheus:

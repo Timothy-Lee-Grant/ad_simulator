@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using AllMiniLmL6V2Sharp;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using AllMiniLmL6V2Sharp.Tokenizer;
 
 
 
@@ -151,7 +152,8 @@ public class CampaignCache
         }
         
         //Tim Grant - One of the suggestions which Gemini just told me to do was not to have this embedder object created each time I run this function, because this will cause my application to crash in the future if I do this many times. So it suggested the singleton pattern. I will need to implement this in the future. 
-        using var embedder = new AllMiniLmL6V2Embedder();
+        var tokenizer = new BertTokenizer("model/vocab.txt");
+        using var embedder = new AllMiniLmL6V2Embedder("model/model.onnx", tokenizer);
         float[]? embedding = embedder.GenerateEmbedding(video.Description).ToArray();
 
         video.Embedding = new Pgvector.Vector(embedding);
@@ -163,12 +165,13 @@ public class CampaignCache
 
     public async Task GenerateEmbeddingsForAllVideos()
     {
+        var tokenizer = new BertTokenizer("model/vocab.txt");
         // 1. Load the embedder ONCE (Singleton-style)
-        using var embedder = new AllMiniLmL6V2Embedder();
+        using var embedder = new AllMiniLmL6V2Embedder("model/model.onnx", tokenizer);
 
         // 2. Stream the videos that don't have embeddings yet
         var videoStream = _dbContext.Videos
-            .Where(v => v.Embedding == null)
+            .Where(v => v.Embedding == null || v.Embedding.ToArray()[0] == 0.15f)
             .AsAsyncEnumerable(); 
 
         await foreach (var video in videoStream)
@@ -186,6 +189,64 @@ public class CampaignCache
         // 3. Save all changes at once at the end (or in chunks)
         await _dbContext.SaveChangesAsync();
     }
+
+
+public async Task GenerateEmbeddingsForAllVideosWithDebugging()
+{
+    _logger.LogInformation("Starting bulk vectorization...");
+
+    var tokenizer = new BertTokenizer("model/vocab.txt");
+    using var embedder = new AllMiniLmL6V2Embedder("model/model.onnx", tokenizer);
+
+    // FIX: Pull all videos into memory first so we don't confuse the SQL translator
+    // We use .ToListAsync() to execute the SQL immediately and get the objects into C#
+    var allVideos = await _dbContext.Videos.ToListAsync();
+    
+    _logger.LogInformation("Checking {Count} videos for missing or default embeddings.", allVideos.Count);
+
+    int processedCount = 0;
+
+    foreach (var video in allVideos)
+    {
+        // Check if it's null OR contains our 'default' 0.15 value
+        bool needsUpdate = video.Embedding == null || 
+                          (video.Embedding.ToArray().Length > 0 && video.Embedding.ToArray()[0] == 0.15f);
+
+        if (needsUpdate && !string.IsNullOrWhiteSpace(video.Description))
+        {
+            try 
+            {
+                var vectorArray = embedder.GenerateEmbedding(video.Description).ToArray();
+                video.Embedding = new Pgvector.Vector(vectorArray);
+                
+                // Explicitly tell EF Core this specific video was changed
+                _dbContext.Entry(video).State = EntityState.Modified;
+                
+                processedCount++;
+                _logger.LogInformation("Generated real vector for: {Title}", video.Title);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error embedding video: {Title}", video.Title);
+            }
+        }
+        // Fix the DateTime Kind if it's unspecified
+        if (video.CreatedAt.Kind == DateTimeKind.Unspecified)
+        {
+            video.CreatedAt = DateTime.SpecifyKind(video.CreatedAt, DateTimeKind.Utc);
+        }
+    }
+
+    if (processedCount > 0)
+    {
+        var savedRows = await _dbContext.SaveChangesAsync();
+        _logger.LogInformation("SUCCESS: Database updated. Videos vectorized: {Processed}, Rows affected: {Saved}", processedCount, savedRows);
+    }
+    else
+    {
+        _logger.LogInformation("No videos required updating.");
+    }
+}
 
     //Tim Grant - I just realized that I don't really have any actual endpoints for creating and adding data from my C# into the database. 
     //If I did this, I would need to give the user a frontend to be able to actually perform those operations. This is something I have not built out yet but might be valuable in the future. 

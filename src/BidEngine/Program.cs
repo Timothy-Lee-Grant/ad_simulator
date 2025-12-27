@@ -51,6 +51,18 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+//check Input arguments to See if we need to seed the data for vectorization of the ads and videos. 
+if(args.Contains("--seed-vectors"))
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var service = scope.ServiceProvider.GetRequiredService<CampaignCache>();
+        await service.GenerateEmbeddingsForAllVideos();
+        //await service.GenerateEmbeddingsForAllAds();
+        return;
+    }
+}
+
 // Database migration (optional - can also use SQL scripts)
 using (var scope = app.Services.CreateScope())
 {
