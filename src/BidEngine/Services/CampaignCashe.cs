@@ -191,7 +191,7 @@ public class CampaignCache
     }
 
 
-    public async Task GenerateEmbeddingsForAllVideosWithDebugging()
+public async Task GenerateEmbeddingsForAllVideosWithDebugging()
 {
     _logger.LogInformation("Starting bulk vectorization...");
 
@@ -229,6 +229,11 @@ public class CampaignCache
             {
                 _logger.LogError(ex, "Error embedding video: {Title}", video.Title);
             }
+        }
+        // Fix the DateTime Kind if it's unspecified
+        if (video.CreatedAt.Kind == DateTimeKind.Unspecified)
+        {
+            video.CreatedAt = DateTime.SpecifyKind(video.CreatedAt, DateTimeKind.Utc);
         }
     }
 
