@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using AllMiniLmL6V2Sharp;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using AllMiniLmL6V2Sharp.Tokenizer;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 
 
@@ -288,6 +289,18 @@ public class CampaignCache
         {
             _logger.LogInformation("No videos required updating.");
         }
+    }
+
+    public async Task<List<Ad>> PerformSematicSearchForTop3Ads(Pgvector.Vector targetVector)
+    {
+        var topAds = await _dbContext.Ads
+            .FromSqlInterpolated($@"
+            SELECT * FROM ads
+            ORDER BY embedding <=> {targetVector}
+            LIMIT 3")
+            .ToListAsync();
+
+            return topAds;
     }
 
     //Tim Grant - I just realized that I don't really have any actual endpoints for creating and adding data from my C# into the database. 
