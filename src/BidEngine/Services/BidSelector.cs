@@ -20,33 +20,36 @@ namespace BidEngine.Services;
 /// is currently being implemented as of now.)
 public class BidSelector
 {
-    private readonly CampaignCache _cashe;
+    private readonly CampaignReadCacheService _campaignService;
+    private readonly VideoEmbeddingService _embeddingService;
+    private readonly SemanticQueryService _semanticService;
     private readonly ILogger<BidSelector> _logger;
     private readonly Random _random = new();
 
-    public BidSelector(CampaignCache cashe, ILogger<BidSelector> logger)
+    public BidSelector(
+        CampaignReadCacheService campaignService,
+        VideoEmbeddingService embeddingService,
+        SemanticQueryService semanticService,
+        ILogger<BidSelector> logger)
     {
-        _cashe = cashe;
+        _campaignService = campaignService;
+        _embeddingService = embeddingService;
+        _semanticService = semanticService;
         _logger = logger;
     }
 
     public async Task<BidResponse?> SelectWinningBidAsync(BidRequest request)
     {
         var adSelection = 0.7;
-        //var res = null;
         BidResponse? res = null;
 
-        //determine if metadata about user request exists so I can route 
-        //ad selection to the sematic search or the highest bidding action
-        if(request.VideoId.HasValue)
+        if (request.VideoId.HasValue)
         {
             res = await SelectWinningBidBySemanticSearch(request);
         }
         else
         {
-            //perform AB Testing for 'dumb highest bid auction method' 
-            //for requests which do not have semantic data to compare against.
-            if(adSelection>0.5)
+            if (adSelection > 0.5)
             {
                 res = await SelectWinningBidAsyncAlgorithm1(request);
             }
@@ -56,36 +59,36 @@ public class BidSelector
             }
         }
 
-        
         return res;
     }
 
     public async Task<BidResponse?> SelectWinningBidBySemanticSearch(BidRequest request)
     {
         _logger.LogInformation(
-            "Using Semantic Search to Select winning advertisement to show to user: {userId}",
-        request.UserId
+            "Using Semantic Search to select winning advertisement for user {UserId}",
+            request.UserId
         );
-        BidResponse? result=null;
 
-        if(request.VideoId == null)
+        if (request.VideoId == null)
         {
             return await SelectWinningBidAsyncAlgorithm1(request);
         }
 
-        var videoVector = await _cashe.FindVectorFromVideoId(request.VideoId.Value);
+        var videoVector = await _embeddingService.FindVectorFromVideoId(request.VideoId.Value);
+        if (videoVector == null)
+        {
+            _logger.LogWarning("No vector found for video {VideoId}", request.VideoId.Value);
+            return null;
+        }
 
-        //perform semantic search
-        var topAds = await _cashe.PerformSematicSearchForTop3Ads(videoVector);
-
+        var topAds = await _semanticService.PerformSemanticSearchForTop3Ads(videoVector);
         if (topAds == null || !topAds.Any())
         {
             return null;
         }
 
         var winner = topAds.First();
-
-        result = new BidResponse
+        return new BidResponse
         {
             AdId = winner.Id,
             AdContent = new AdContent
@@ -96,12 +99,9 @@ public class BidSelector
                 Description = winner.Description
             },
             CampaignId = winner.CampaignId,
-            //Tim Grant - As of now, bid price is hard-coded. In the future, I will need to go in and check the campaign ID and from that get the database search to find what the actual bid price of that ad was. 
             BidPrice = 3,
-            Confidence = 8      
+            Confidence = 8
         };
-
-        return result;
     }
 
     /// <summary>
@@ -115,8 +115,8 @@ public class BidSelector
             request.PlacementId
         );
 
-        // step 1: get all the active campaigns from the cashe
-        var activeCampaigns = await _cashe.GetActiveCampaignsAsync();
+        // step 1: get all the active campaigns from the campaign service
+        var activeCampaigns = await _campaignService.GetActiveCampaignsAsync();
         if(!activeCampaigns.Any())
         {
             _logger.LogWarning("No active campaigns found");
@@ -221,7 +221,7 @@ public class BidSelector
 
         //activeCampaigns will be a List<Campaigns> which are active
         //Tim Grant - As of now we have GetActiveCampaignsAsync() declared as List<Campaigns> , but what if there are no campaigns to serve? then we should get a null value???
-        var activeCampaigns = await _cashe.GetActiveCampaignsAsync();
+        var activeCampaigns = await _campaignService.GetActiveCampaignsAsync();
 
         if(!activeCampaigns.Any())
         {

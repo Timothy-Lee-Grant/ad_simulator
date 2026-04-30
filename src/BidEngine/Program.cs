@@ -42,6 +42,9 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
 //add custom services
 builder.Services.AddScoped<CampaignCache>();
+builder.Services.AddScoped<CampaignReadCacheService>();
+builder.Services.AddScoped<VideoEmbeddingService>();
+builder.Services.AddScoped<SemanticQueryService>();
 builder.Services.AddScoped<BidSelector>();
 builder.Services.AddScoped<BudgetService>();
 
@@ -56,7 +59,7 @@ if(args.Contains("--seed-vectors"))
 {
     using (var scope = app.Services.CreateScope())
     {
-        var service = scope.ServiceProvider.GetRequiredService<CampaignCache>();
+        var service = scope.ServiceProvider.GetRequiredService<VideoEmbeddingService>();
         await service.GenerateEmbeddingsForAllVideos();
         //await service.GenerateEmbeddingsForAllAds();
         return;

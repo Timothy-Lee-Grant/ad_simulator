@@ -7,17 +7,17 @@ using System.Text.Json.Serialization;
 
 namespace BidEngine.Services;
 
-public class CampaignCache
+public class CampaignReadCacheService
 {
     private readonly IDatabase _redis;
     private readonly AppDbContext _dbContext;
-    private readonly ILogger<CampaignCache> _logger;
+    private readonly ILogger<CampaignReadCacheService> _logger;
     private const int CacheTtlSeconds = 300;
 
-    public CampaignCache(IConnectionMultiplexer db, AppDbContext context, ILogger<CampaignCache> logger)
+    public CampaignReadCacheService(IConnectionMultiplexer connectionMultiplexer, AppDbContext dbContext, ILogger<CampaignReadCacheService> logger)
     {
-        _redis = db.GetDatabase();
-        _dbContext = context;
+        _redis = connectionMultiplexer.GetDatabase();
+        _dbContext = dbContext;
         _logger = logger;
     }
 
@@ -76,6 +76,7 @@ public class CampaignCache
 
         var json = JsonSerializer.Serialize(campaigns, options);
         await _redis.StringSetAsync(cacheKey, json, TimeSpan.FromSeconds(CacheTtlSeconds));
+
         return campaigns;
     }
 
@@ -87,4 +88,3 @@ public class CampaignCache
         _logger.LogInformation("Invalidated cache for campaign {CampaignId}", campaignId);
     }
 }
-

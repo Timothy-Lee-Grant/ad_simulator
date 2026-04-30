@@ -77,3 +77,34 @@ Document the configuration and secrets refactor plan in the project roadmap.
 ## Next Steps
 - Implement the config/secrets refactor in `src/BidEngine/Program.cs`, `appsettings.json`, and `docker-compose.yml`.
 - Add `.env.example` and validation tests for env-based configuration binding.
+
+---
+
+## Date
+2026-04-30
+
+## Goal
+Execute the service boundary cleanup refactor in BidEngine to split the monolithic CampaignCache into focused services.
+
+## Actions
+- Created `src/BidEngine/Services/CampaignReadCacheService.cs` to handle campaign read and caching operations (GetCampaignAsync, GetActiveCampaignsAsync, InvalidateCampaignAsync).
+- Created `src/BidEngine/Services/VideoEmbeddingService.cs` to manage video and ad vector embeddings (FindVectorFromVideoId, CreateVectorFromVideoId, GenerateEmbeddingsForAllVideos, GenerateEmbeddingsForAllVideosWithDebugging, GenerateEmbeddingsForAllAds).
+- Created `src/BidEngine/Services/SemanticQueryService.cs` to perform semantic searches (PerformSemanticSearchForTop3Ads).
+- Refactored `src/BidEngine/Services/CampaignCashe.cs` (CampaignCache) to remove embedding and semantic query methods, keeping only campaign read/cache responsibilities.
+- Updated `src/BidEngine/Services/BidSelector.cs` to inject and use the new focused services: CampaignReadCacheService for active campaigns, VideoEmbeddingService for video vectors, and SemanticQueryService for semantic ad searches.
+- Updated `src/BidEngine/Controllers/BidControllers.cs` AdminController to use VideoEmbeddingService for seed endpoints.
+- Modified `src/BidEngine/Program.cs` to register the new services in DI and update the --seed-vectors startup logic to use VideoEmbeddingService.
+- Fixed variable naming inconsistencies (e.g., _cashe to _cache) in BidSelector.
+- Built and validated the refactored BidEngine project to ensure compilation succeeds.
+
+## Findings
+- The refactor successfully split the monolithic CampaignCache into three focused services, improving separation of concerns: read/cache, embedding/vector operations, and semantic queries.
+- BidSelector now depends on specific services for their responsibilities, making the code more modular and testable.
+- Compilation passes with only one ASP.NET analyzer warning about UseEndpoints, which is unrelated to the refactor.
+- The new service boundaries align with the roadmap's goal of isolating business rules from infrastructure details and enabling easier onboarding and testing.
+
+## Next Steps
+- Remove the transitional CampaignCache class entirely once all references are migrated.
+- Add unit tests for the new focused services to validate their individual behaviors.
+- Consider adding interfaces for the new services to enable dependency injection flexibility and mocking in tests.
+- Proceed to the next roadmap item or continue refining the current refactor.

@@ -151,32 +151,31 @@ public class BidController : ControllerBase
 [Route("api/[controller]")]
 public class AdminController : ControllerBase
 {
-    //private readonly AdEngineDataService _dataService;
-    private readonly CampaignCache _dataService;
+    private readonly VideoEmbeddingService _videoEmbeddingService;
 
-    public AdminController(CampaignCache dataService)
+    public AdminController(VideoEmbeddingService videoEmbeddingService)
     {
-        _dataService = dataService;
+        _videoEmbeddingService = videoEmbeddingService;
     }
 
     [HttpPost("seed-vectors")]
     public async Task<IActionResult> SeedVectors()
     {
-        await _dataService.GenerateEmbeddingsForAllVideos();
-        return Ok("The vectorization has been completed. ");
+        await _videoEmbeddingService.GenerateEmbeddingsForAllVideos();
+        return Ok("The vectorization has been completed.");
     }
 
     [HttpPost("seed-vectors-with-debugging")]
     public async Task<IActionResult> SeedVectorsWithDebug()
     {
-        await _dataService.GenerateEmbeddingsForAllVideosWithDebugging();
-        return Ok("The vectorization has been completed. ");
+        await _videoEmbeddingService.GenerateEmbeddingsForAllVideosWithDebugging();
+        return Ok("The vectorization has been completed.");
     }
 
     [HttpPost("seed-vector-ads")]
     public async Task<IActionResult> SeedVectorsAds()
     {
-        await _dataService.GenerateEmbeddingsForAllAds();
+        await _videoEmbeddingService.GenerateEmbeddingsForAllAds();
         return Ok("The vectorization for all ads has been completed.");
     }
 }
