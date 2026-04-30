@@ -1,11 +1,14 @@
 using BidEngine.Shared;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Pgvector.EntityFrameworkCore;
 using Npgsql;
 
 namespace BidEngine.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid, IdentityUserClaim<Guid>,
+    ApplicationUserRole, IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>
 {
 
     public AppDbContext(DbContextOptions<AppDbContext> options ) : base(options)
@@ -15,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<Ad> Ads => Set<Ad>();
     public DbSet<TargetingRule> TargetingRules => Set<TargetingRule>();
     public DbSet<Video> Videos => Set<Video>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
 
 
@@ -161,5 +165,75 @@ public class AppDbContext : DbContext
             }
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         });
-    } 
+
+        // Configure Identity tables
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.ToTable("users");
+            entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired();
+            entity.Property(e => e.LastName).HasColumnName("last_name").IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+        });
+
+        modelBuilder.Entity<ApplicationRole>(entity =>
+        {
+            entity.ToTable("roles");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<ApplicationUserRole>(entity =>
+        {
+            entity.ToTable("user_roles");
+            entity.Property(e => e.AssignedAt).HasColumnName("assigned_at");
+            entity.Property(e => e.AssignedBy).HasColumnName("assigned_by");
+        });
+
+        modelBuilder.Entity<IdentityUserClaim<Guid>>(entity =>
+        {
+            entity.ToTable("user_claims");
+        });
+
+        modelBuilder.Entity<IdentityUserLogin<Guid>>(entity =>
+        {
+            entity.ToTable("user_logins");
+        });
+
+        modelBuilder.Entity<IdentityRoleClaim<Guid>>(entity =>
+        {
+            entity.ToTable("role_claims");
+        });
+
+        modelBuilder.Entity<IdentityUserToken<Guid>>(entity =>
+        {
+            entity.ToTable("user_tokens");
+        });
+
+        // Configure AuditLog
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.ToTable("audit_logs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Action).HasColumnName("action").IsRequired();
+            entity.Property(e => e.EntityType).HasColumnName("entity_type").IsRequired();
+            entity.Property(e => e.EntityId).HasColumnName("entity_id");
+            entity.Property(e => e.OldValues).HasColumnName("old_values");
+            entity.Property(e => e.NewValues).HasColumnName("new_values");
+            entity.Property(e => e.IpAddress).HasColumnName("ip_address");
+            entity.Property(e => e.UserAgent).HasColumnName("user_agent");
+            entity.Property(e => e.Timestamp).HasColumnName("timestamp");
+            entity.Property(e => e.Success).HasColumnName("success");
+            entity.Property(e => e.ErrorMessage).HasColumnName("error_message");
+
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.AuditLogs)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
 }
