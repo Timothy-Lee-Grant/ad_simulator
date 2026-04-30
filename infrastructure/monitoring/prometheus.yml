@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'ads-platform'
+    environment: 'development'
+
+scrape_configs:
+  - job_name: 'bid-engine'
+    static_configs:
+      - targets: ['bid-engine:8081']
+    metrics_path: '/metrics'

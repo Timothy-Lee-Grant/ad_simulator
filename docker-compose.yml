@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -82,12 +80,9 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./infrastructure/monitoring:/etc/prometheus
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infrastructure/monitoring/rules.yml:/etc/prometheus/rules/rules.yml:ro
       - prometheus_data:/prometheus
-
-    #volumes:
-    #  - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-    #  - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
 
