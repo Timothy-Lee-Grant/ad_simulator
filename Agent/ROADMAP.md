@@ -8,6 +8,15 @@ This roadmap is based on the current implementation in `ad_simulator` (BidEngine
    - Unify connection-string handling (`DefaultConnection` vs `AwsConnection`) and remove plaintext secrets from tracked config.
    - Introduce strongly typed options classes and clear environment precedence.
    - **ROI:** Immediately reduces production risk and eliminates recurring config drift/debug time.
+   - **Refactor plan:**
+     - Add a `.env.example` and document required environment variables; keep all real secrets out of the repository.
+   - Make local development the default runtime path: `ConnectionStrings__DefaultConnection` and `Redis__ConnectionString` should be primary, with safe local placeholders such as `Server=postgres;Port=5432;Database=ads_db;User Id=postgres;Password=postgres`.
+   - Remove AWS-specific runtime wiring from the default Docker Compose flow. If AWS support remains, keep it optional and documented with placeholder values like `Place Your Info Here` rather than real credentials.
+   - Refactor `src/BidEngine/Program.cs` to bind strongly typed options for database and Redis using environment variables first, then non-secret `appsettings.json` defaults.
+   - Strip secrets from checked-in `appsettings.json` and `.env`; replace any real AWS or database credentials with placeholders.
+   - Ensure the code fails fast with clear errors when required config is missing, so local Docker Compose can run cleanly without any AWS account.
+   - Update `docker-compose.yml` to use `DefaultConnection` and `Redis` env values only, and remove or deprecate `ConnectionStrings__AwsConnection` from the main composition.
+   - Add unit tests for configuration binding and env precedence, plus a smoke test that validates the local compose stack uses the local default connection string.
 
 2. **Service boundary cleanup in BidEngine**
    - Split `CampaignCache` into focused services:
