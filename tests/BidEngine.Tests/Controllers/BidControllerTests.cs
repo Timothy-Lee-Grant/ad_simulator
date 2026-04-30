@@ -23,9 +23,10 @@ public class BidControllerTests
             .Options;
 
         await using var ctx = new BidEngine.Data.AppDbContext(options);
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
-        var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache);
+        var strategy = new Mock<IBiddingStrategy>();
+        strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>())).ReturnsAsync((BidResponse?)null);
+        var selector = new BidEngine.Services.BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
+        var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>()));
         var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
 
         var bad = await controller.EvaluateBidsAsync(new BidRequest { UserId = "", PlacementId = "" });
@@ -42,10 +43,10 @@ public class BidControllerTests
             .Options;
 
         await using var ctx = new BidEngine.Data.AppDbContext(options);
-        // no campaigns in db -> no winning bids
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
-        var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache);
+        var strategy = new Mock<IBiddingStrategy>();
+        strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>())).ReturnsAsync((BidResponse?)null);
+        var selector = new BidEngine.Services.BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
+        var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>()));
         var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
 
         var res = await controller.EvaluateBidsAsync(new BidRequest { UserId = "u", PlacementId = "p" });
@@ -69,9 +70,18 @@ public class BidControllerTests
         ctx.Campaigns.Add(campaign);
         await ctx.SaveChangesAsync();
 
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
-        var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache);
+        var strategy = new Mock<IBiddingStrategy>();
+        strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>()))
+            .ReturnsAsync(new BidResponse
+            {
+                CampaignId = campaign.Id,
+                AdId = campaign.Ads[0].Id,
+                BidPrice = campaign.CpmBid,
+                AdContent = new AdContent { Title = "ad", ImageUrl = "i", RedirectUrl = "r", Description = "" },
+                Confidence = 0.95
+            });
+        var selector = new BidEngine.Services.BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
+        var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>()));
 
         var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
         var res = await controller.EvaluateBidsAsync(new BidRequest { UserId = "u", PlacementId = "p" });
@@ -95,9 +105,18 @@ public class BidControllerTests
         ctx.Campaigns.Add(campaign);
         await ctx.SaveChangesAsync();
 
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidEngine.Services.BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
-        var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), cache);
+        var strategy = new Mock<IBiddingStrategy>();
+        strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>()))
+            .ReturnsAsync(new BidResponse
+            {
+                CampaignId = campaign.Id,
+                AdId = campaign.Ads[0].Id,
+                BidPrice = campaign.CpmBid,
+                AdContent = new AdContent { Title = "ad", ImageUrl = "i", RedirectUrl = "r", Description = "" },
+                Confidence = 0.95
+            });
+        var selector = new BidEngine.Services.BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
+        var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>()));
 
         var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
         var res = await controller.EvaluateBidsAsync(new BidRequest { UserId = "u", PlacementId = "p" });

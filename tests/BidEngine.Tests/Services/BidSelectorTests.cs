@@ -25,8 +25,9 @@ public class BidSelectorTests
             .Options;
 
         await using var ctx = new BidEngine.Data.AppDbContext(options);
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
+        var strategy = new Mock<IBiddingStrategy>();
+        strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>())).ReturnsAsync((BidResponse?)null);
+        var selector = new BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
         res.Should().BeNull();
@@ -50,8 +51,17 @@ public class BidSelectorTests
         ctx.Campaigns.AddRange(c1, c2);
         await ctx.SaveChangesAsync();
 
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
+        var strategy = new Mock<IBiddingStrategy>();
+        strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>()))
+            .ReturnsAsync(new BidResponse
+            {
+                CampaignId = c2.Id,
+                AdId = c2.Ads[0].Id,
+                BidPrice = c2.CpmBid,
+                AdContent = new AdContent { Title = "ad2", ImageUrl = "u", RedirectUrl = "r", Description = "" },
+                Confidence = 0.95
+            });
+        var selector = new BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
         res.Should().NotBeNull();
@@ -77,8 +87,17 @@ public class BidSelectorTests
         ctx.Campaigns.AddRange(c1, c2);
         await ctx.SaveChangesAsync();
 
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
+        var strategy = new Mock<IBiddingStrategy>();
+        strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>()))
+            .ReturnsAsync(new BidResponse
+            {
+                CampaignId = c2.Id,
+                AdId = c2.Ads[0].Id,
+                BidPrice = c2.CpmBid,
+                AdContent = new AdContent { Title = "ad2", ImageUrl = "u", RedirectUrl = "r", Description = "" },
+                Confidence = 0.95
+            });
+        var selector = new BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p" });
         res.Should().NotBeNull();
@@ -104,8 +123,17 @@ public class BidSelectorTests
         ctx.Campaigns.Add(campaign);
         await ctx.SaveChangesAsync();
 
-        var cache = new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>());
-        var selector = new BidSelector(cache, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
+        var strategy = new Mock<IBiddingStrategy>();
+        strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>()))
+            .ReturnsAsync(new BidResponse
+            {
+                CampaignId = campaign.Id,
+                AdId = campaign.Ads[0].Id,
+                BidPrice = campaign.CpmBid,
+                AdContent = new AdContent { Title = "ad", ImageUrl = "i", RedirectUrl = "r", Description = "" },
+                Confidence = 0.95
+            });
+        var selector = new BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidSelector>>());
 
         var res = await selector.SelectWinningBidAsync(new BidRequest { UserId = "u", PlacementId = "p", CountryCode = "US" });
         res.Should().NotBeNull();
