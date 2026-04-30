@@ -57,3 +57,23 @@ Run the repository smoke test suite against the Docker Compose stack.
 
 ## Next Steps
 - Keep the compose stack under observation and use `scripts/e2e_smoke.sh` for future validation.
+
+---
+
+## Date
+2026-04-30
+
+## Goal
+Document the configuration and secrets refactor plan in the project roadmap.
+
+## Actions
+- Updated `Agent/ROADMAP.md` to add a concrete configuration and secrets refactor plan.
+- Made local development the default runtime path and explicitly called out removing AWS-specific default wiring.
+
+## Findings
+- The roadmap now clearly supports running the project locally without any AWS account.
+- It specifies strong-typed config binding, environment precedence, placeholder-only secrets, and Docker Compose cleanup.
+
+## Next Steps
+- Implement the config/secrets refactor in `src/BidEngine/Program.cs`, `appsettings.json`, and `docker-compose.yml`.
+- Add `.env.example` and validation tests for env-based configuration binding.
