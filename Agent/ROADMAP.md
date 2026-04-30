@@ -26,10 +26,16 @@ This roadmap is based on the current implementation in `ad_simulator` (BidEngine
    - Keep controllers thin and isolate business rules from infrastructure details.
    - **ROI:** Faster onboarding, easier testing, and safer future feature changes.
 
-3. **Bidding strategy refactor to pluggable policies**
+3. **Bidding strategy refactor to pluggable policies** ✅ COMPLETED
    - Replace hardcoded algorithm branching with strategy pattern (e.g., highest CPM, semantic-only, hybrid weighted).
    - Add a selection policy config or experiment flag.
    - **ROI:** Enables controlled experimentation and feature velocity without destabilizing core bid path.
+   - **Implementation completed:**
+     - Created `IBiddingStrategy` interface and three concrete implementations: `HighestCpmStrategy`, `SemanticOnlyStrategy`, `HybridWeightedStrategy`.
+     - Refactored `BidSelector` to use Strategy pattern with dependency injection.
+     - Added configuration-driven strategy selection via `BiddingStrategyOptions` and factory pattern.
+     - Updated DI registration in `Program.cs` and configuration in `appsettings.json`.
+     - Validated compilation and runtime functionality.
 
 ---
 

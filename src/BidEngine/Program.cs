@@ -45,8 +45,30 @@ builder.Services.AddScoped<CampaignCache>();
 builder.Services.AddScoped<CampaignReadCacheService>();
 builder.Services.AddScoped<VideoEmbeddingService>();
 builder.Services.AddScoped<SemanticQueryService>();
-builder.Services.AddScoped<BidSelector>();
 builder.Services.AddScoped<BudgetService>();
+
+// Register bidding strategies
+builder.Services.AddScoped<HighestCpmStrategy>();
+builder.Services.AddScoped<SemanticOnlyStrategy>();
+builder.Services.AddScoped<HybridWeightedStrategy>();
+
+// Configure bidding strategy options
+builder.Services.Configure<BiddingStrategyOptions>(
+    builder.Configuration.GetSection("BiddingStrategy")
+);
+
+// Register strategy factory
+builder.Services.AddScoped<BiddingStrategyFactory>();
+
+// Register the selected strategy via factory
+builder.Services.AddScoped<IBiddingStrategy>(sp =>
+{
+    var factory = sp.GetRequiredService<BiddingStrategyFactory>();
+    return factory.CreateStrategy();
+});
+
+// Register BidSelector with strategy injection
+builder.Services.AddScoped<BidSelector>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

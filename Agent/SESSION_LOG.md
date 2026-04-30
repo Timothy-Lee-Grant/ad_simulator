@@ -108,3 +108,35 @@ Execute the service boundary cleanup refactor in BidEngine to split the monolith
 - Add unit tests for the new focused services to validate their individual behaviors.
 - Consider adding interfaces for the new services to enable dependency injection flexibility and mocking in tests.
 - Proceed to the next roadmap item or continue refining the current refactor.
+
+---
+
+## Date
+2026-04-30
+
+## Goal
+Implement the bidding strategy refactor to pluggable policies as outlined in roadmap item 3.
+
+## Actions
+- Created `src/BidEngine/Services/IBiddingStrategy.cs` interface defining the contract for all bidding strategies with `SelectWinningBidAsync(BidRequest request)` method.
+- Implemented `src/BidEngine/Services/HighestCpmStrategy.cs` that selects campaigns based on highest CPM bid with targeting rule filtering and random ad selection from winning campaign.
+- Implemented `src/BidEngine/Services/SemanticOnlyStrategy.cs` that selects ads based on semantic similarity to video content using vector embeddings and semantic search.
+- Implemented `src/BidEngine/Services/HybridWeightedStrategy.cs` that combines semantic relevance (60% weight) and normalized CPM bidding (40% weight) for hybrid scoring.
+- Created `src/BidEngine/Services/BiddingStrategyFactory.cs` and `BiddingStrategyOptions.cs` to enable configuration-driven strategy selection via appsettings.json.
+- Refactored `src/BidEngine/Services/BidSelector.cs` to use the Strategy pattern, injecting `IBiddingStrategy` and delegating bid selection to the configured strategy.
+- Updated `src/BidEngine/Program.cs` to register all strategy implementations, configure options binding, and use the factory to inject the selected strategy.
+- Added `BiddingStrategy` configuration section to `src/BidEngine/appsettings.json` with default strategy set to "HighestCpm".
+- Built and validated the refactored BidEngine project to ensure compilation succeeds with only minor warnings.
+
+## Findings
+- The refactor successfully replaced hardcoded branching logic in BidSelector with a clean Strategy pattern implementation.
+- Three distinct bidding strategies are now available: HighestCpm (traditional), SemanticOnly (AI-powered), and HybridWeighted (balanced approach).
+- Strategy selection is configurable via appsettings.json, enabling A/B testing and gradual rollout of new algorithms.
+- The code is now more modular, testable, and extensible - new strategies can be added without modifying existing code.
+- Compilation passes with only two minor warnings: one about async method without await (placeholder in HybridWeightedStrategy) and one about ASP.NET route registration style.
+
+## Next Steps
+- Test the refactored bidding logic with different strategy configurations to ensure functionality is preserved.
+- Add unit tests for each strategy implementation to validate their individual behaviors.
+- Consider adding strategy performance metrics and experiment tracking for A/B testing.
+- Update roadmap documentation to reflect completion of bidding strategy refactor.
