@@ -216,3 +216,24 @@ Complete Authenticated Admin API Phase 3: testing and validation.
 - Continue expanding admin API documentation and integration tests for controller routing.
 - Add end-to-end admin workflow validation once the frontend admin UI is available.
 
+---
+
+## Date
+2026-04-30
+
+## Goal
+Integrate and verify the online A/B experimentation framework for BidEngine.
+
+## Actions
+- Implemented deterministic experiment assignment, exposure logging, and Prometheus metrics.
+- Added admin experiment inspection endpoints and integrated experiment evaluation into the bid request pipeline.
+- Registered the experiment services in DI and updated controller tests for the new constructor dependencies.
+
+## Findings
+- The experiment framework builds successfully and the BidEngine tests pass.
+- Experiment exposures are now emitted through Prometheus and admin endpoints are available for inspection.
+
+## Next Steps
+- Add experiment outcome logging and persistence.
+- Add targeted unit tests for experiment assignment and experiment service behavior.
+
