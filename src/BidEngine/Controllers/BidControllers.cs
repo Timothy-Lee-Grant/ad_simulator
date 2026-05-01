@@ -1,6 +1,7 @@
 
-using BidEngine.Shared;
 using BidEngine.Services;
+using BidEngine.Services.Interfaces;
+using BidEngine.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Prometheus;
 
@@ -16,6 +17,9 @@ public class BidController : ControllerBase
 {
     private readonly BidSelector _bidSelector;
     private readonly BudgetService _budgetService;
+    private readonly IExperimentService _experimentService;
+    private readonly IExperimentEventLogger _experimentEventLogger;
+    private readonly IExperimentContextAccessor _experimentContextAccessor;
     private readonly ILogger<BidController> _logger;
 
     //prometheus metrics
@@ -27,10 +31,19 @@ public class BidController : ControllerBase
     private static readonly Histogram BidLatencySeconds = Metrics
         .CreateHistogram("bid_latency_seconds", "Bid processing latency in seconds");
 
-    public BidController(BidSelector bidSelector, BudgetService budgetService, ILogger<BidController> logger)
+    public BidController(
+        BidSelector bidSelector,
+        BudgetService budgetService,
+        IExperimentService experimentService,
+        IExperimentEventLogger experimentEventLogger,
+        IExperimentContextAccessor experimentContextAccessor,
+        ILogger<BidController> logger)
     {
         _bidSelector = bidSelector;
         _budgetService = budgetService;
+        _experimentService = experimentService;
+        _experimentEventLogger = experimentEventLogger;
+        _experimentContextAccessor = experimentContextAccessor;
         _logger = logger;
     }
 
@@ -54,6 +67,10 @@ public class BidController : ControllerBase
                 BidRequestsTotal.WithLabels("invalid").Inc();
                 return BadRequest("UserId and PlacementId are required");
             }
+
+            var assignment = await _experimentService.AssignVariationAsync(request);
+            _experimentContextAccessor.CurrentAssignment = assignment;
+            _experimentEventLogger.LogExposure(assignment, request, assignment?.IsAssigned == true ? "assigned" : "control");
 
             var winningBid = await _bidSelector.SelectWinningBidAsync(request);
         

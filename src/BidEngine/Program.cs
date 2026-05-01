@@ -76,6 +76,14 @@ builder.Services.AddScoped<IBiddingStrategy>(sp =>
 // Register BidSelector with strategy injection
 builder.Services.AddScoped<BidSelector>();
 
+// Experimentation framework configuration and services
+builder.Services.Configure<ExperimentOptions>(builder.Configuration.GetSection("Experiments"));
+builder.Services.AddScoped<IExperimentConfigurationProvider, ExperimentConfigurationProvider>();
+builder.Services.AddScoped<IExperimentAssignmentService, ExperimentAssignmentService>();
+builder.Services.AddScoped<IExperimentService, ExperimentService>();
+builder.Services.AddScoped<IExperimentEventLogger, ExperimentEventLogger>();
+builder.Services.AddScoped<IExperimentContextAccessor, ExperimentContextAccessor>();
+
 // Add authentication and authorization services
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
@@ -169,11 +177,11 @@ if(app.Environment.IsDevelopment())
 }
 
 // Add authentication and authorization middleware
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
 //prometheus metrics endpoint
-app.UseRouting();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();

@@ -1,12 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using BidEngine.Controllers;
-using BidEngine.Shared;
-using Moq;
 using BidEngine.Services;
-using Microsoft.EntityFrameworkCore;
+using BidEngine.Services.Interfaces;
+using BidEngine.Shared;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace BidEngine.Tests.Controllers;
@@ -27,7 +28,14 @@ public class BidControllerTests
         strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>())).ReturnsAsync((BidResponse?)null);
         var selector = new BidEngine.Services.BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
         var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>()));
-        var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
+        var controller = new BidController(
+            selector,
+            budget,
+            Mock.Of<IExperimentService>(),
+            Mock.Of<IExperimentEventLogger>(),
+            Mock.Of<IExperimentContextAccessor>(),
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>()
+        );
 
         var bad = await controller.EvaluateBidsAsync(new BidRequest { UserId = "", PlacementId = "" });
         bad.Result.Should().BeOfType<BadRequestObjectResult>();
@@ -47,7 +55,14 @@ public class BidControllerTests
         strategy.Setup(s => s.SelectWinningBidAsync(It.IsAny<BidRequest>())).ReturnsAsync((BidResponse?)null);
         var selector = new BidEngine.Services.BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
         var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>()));
-        var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
+        var controller = new BidController(
+            selector,
+            budget,
+            Mock.Of<IExperimentService>(),
+            Mock.Of<IExperimentEventLogger>(),
+            Mock.Of<IExperimentContextAccessor>(),
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>()
+        );
 
         var res = await controller.EvaluateBidsAsync(new BidRequest { UserId = "u", PlacementId = "p" });
         res.Result.Should().BeOfType<NoContentResult>();
@@ -83,7 +98,14 @@ public class BidControllerTests
         var selector = new BidEngine.Services.BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
         var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>()));
 
-        var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
+        var controller = new BidController(
+            selector,
+            budget,
+            Mock.Of<IExperimentService>(),
+            Mock.Of<IExperimentEventLogger>(),
+            Mock.Of<IExperimentContextAccessor>(),
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>()
+        );
         var res = await controller.EvaluateBidsAsync(new BidRequest { UserId = "u", PlacementId = "p" });
 
         res.Result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(503);
@@ -118,7 +140,14 @@ public class BidControllerTests
         var selector = new BidEngine.Services.BidSelector(strategy.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidEngine.Services.BidSelector>>());
         var budget = new BudgetService(ctx, conn.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<BudgetService>>(), new CampaignCache(conn.Object, ctx, Mock.Of<Microsoft.Extensions.Logging.ILogger<CampaignCache>>()));
 
-        var controller = new BidController(selector, budget, Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>());
+        var controller = new BidController(
+            selector,
+            budget,
+            Mock.Of<IExperimentService>(),
+            Mock.Of<IExperimentEventLogger>(),
+            Mock.Of<IExperimentContextAccessor>(),
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>()
+        );
         var res = await controller.EvaluateBidsAsync(new BidRequest { UserId = "u", PlacementId = "p" });
 
         res.Result.Should().BeOfType<OkObjectResult>();
