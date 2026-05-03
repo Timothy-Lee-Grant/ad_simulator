@@ -34,6 +34,7 @@ public class BidControllerTests
             Mock.Of<IExperimentService>(),
             Mock.Of<IExperimentEventLogger>(),
             Mock.Of<IExperimentContextAccessor>(),
+            Mock.Of<IAdEventService>(),
             Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>()
         );
 
@@ -61,6 +62,7 @@ public class BidControllerTests
             Mock.Of<IExperimentService>(),
             Mock.Of<IExperimentEventLogger>(),
             Mock.Of<IExperimentContextAccessor>(),
+            Mock.Of<IAdEventService>(),
             Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>()
         );
 
@@ -104,6 +106,7 @@ public class BidControllerTests
             Mock.Of<IExperimentService>(),
             Mock.Of<IExperimentEventLogger>(),
             Mock.Of<IExperimentContextAccessor>(),
+            Mock.Of<IAdEventService>(),
             Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>()
         );
         var res = await controller.EvaluateBidsAsync(new BidRequest { UserId = "u", PlacementId = "p" });
@@ -146,6 +149,7 @@ public class BidControllerTests
             Mock.Of<IExperimentService>(),
             Mock.Of<IExperimentEventLogger>(),
             Mock.Of<IExperimentContextAccessor>(),
+            Mock.Of<IAdEventService>(),
             Mock.Of<Microsoft.Extensions.Logging.ILogger<BidController>>()
         );
         var res = await controller.EvaluateBidsAsync(new BidRequest { UserId = "u", PlacementId = "p" });

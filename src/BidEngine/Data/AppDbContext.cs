@@ -19,6 +19,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     public DbSet<TargetingRule> TargetingRules => Set<TargetingRule>();
     public DbSet<Video> Videos => Set<Video>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<AdEventLog> AdEventLogs => Set<AdEventLog>();
+    public DbSet<AdEventAggregate> AdEventAggregates => Set<AdEventAggregate>();
 
 
 
@@ -52,6 +54,38 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             entity.Property(e => e.LifetimeSpent).HasColumnName("lifetime_spent").HasColumnType("numeric(12,2)");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        });
+        
+        modelBuilder.Entity<AdEventLog>(entity =>
+        {
+            entity.ToTable("ad_event_logs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EventType).HasColumnName("event_type").IsRequired();
+            entity.Property(e => e.TimestampUtc).HasColumnName("timestamp_utc");
+            entity.Property(e => e.CampaignId).HasColumnName("campaign_id");
+            entity.Property(e => e.AdId).HasColumnName("ad_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+            entity.Property(e => e.PlacementId).HasColumnName("placement_id").IsRequired();
+            entity.Property(e => e.RequestId).HasColumnName("request_id").IsRequired();
+            entity.Property(e => e.ExperimentId).HasColumnName("experiment_id");
+            entity.Property(e => e.VariationId).HasColumnName("variation_id");
+            entity.Property(e => e.PayloadJson).HasColumnName("payload_json");
+        });
+
+        modelBuilder.Entity<AdEventAggregate>(entity =>
+        {
+            entity.ToTable("ad_event_aggregates");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CampaignId).HasColumnName("campaign_id");
+            entity.Property(e => e.AdId).HasColumnName("ad_id");
+            entity.Property(e => e.Date).HasColumnName("date");
+            entity.Property(e => e.ImpressionCount).HasColumnName("impression_count");
+            entity.Property(e => e.ClickCount).HasColumnName("click_count");
+            entity.Property(e => e.SpendTotal).HasColumnName("spend_total").HasColumnType("numeric(14,4)");
+            entity.Property(e => e.ExperimentId).HasColumnName("experiment_id");
+            entity.Property(e => e.VariationId).HasColumnName("variation_id");
         });
         
         modelBuilder.Entity<Ad>(entity =>

@@ -20,6 +20,7 @@ public class BidController : ControllerBase
     private readonly IExperimentService _experimentService;
     private readonly IExperimentEventLogger _experimentEventLogger;
     private readonly IExperimentContextAccessor _experimentContextAccessor;
+    private readonly IAdEventService _adEventService;
     private readonly ILogger<BidController> _logger;
 
     //prometheus metrics
@@ -37,6 +38,7 @@ public class BidController : ControllerBase
         IExperimentService experimentService,
         IExperimentEventLogger experimentEventLogger,
         IExperimentContextAccessor experimentContextAccessor,
+        IAdEventService adEventService,
         ILogger<BidController> logger)
     {
         _bidSelector = bidSelector;
@@ -44,6 +46,7 @@ public class BidController : ControllerBase
         _experimentService = experimentService;
         _experimentEventLogger = experimentEventLogger;
         _experimentContextAccessor = experimentContextAccessor;
+        _adEventService = adEventService;
         _logger = logger;
     }
 
@@ -101,6 +104,23 @@ public class BidController : ControllerBase
 
             BidRequestsTotal.WithLabels("success").Inc();
 
+            // Record the impression event for attribution and analytics.
+            var impressionEvent = new AdImpressionEvent
+            {
+                CampaignId = winningBid.CampaignId,
+                AdId = winningBid.AdId,
+                UserId = request.UserId,
+                PlacementId = request.PlacementId,
+                RequestId = Guid.NewGuid().ToString(),
+                BidPrice = winningBid.BidPrice,
+                ImpressionValue = winningBid.BidPrice / 1000m,
+                ExperimentId = assignment?.ExperimentId,
+                VariationId = assignment?.VariationId,
+                TimestampUtc = DateTime.UtcNow
+            };
+
+            await _adEventService.PublishImpressionAsync(impressionEvent);
+
             // Tim Grant - make sure we learn how to acutally see this latency histogram in prometheus later
             var latency = (DateTime.UtcNow - startTime).TotalSeconds;
             BidLatencySeconds.Observe(latency);
@@ -138,26 +158,28 @@ public class BidController : ControllerBase
     /// Simple health check endpoint to verify the service is running
     /// </summary>
     [HttpGet("User_Click_Event")]
-    public ActionResult<string> User_Click_Event([FromQuery] Guid? campaignId, [FromQuery] Guid? adId, [FromQuery] string? userId)
+    public async Task<ActionResult<string>> User_Click_Event([FromQuery] Guid? campaignId, [FromQuery] Guid? adId, [FromQuery] string? userId)
     {
+        if (campaignId == null || adId == null || string.IsNullOrEmpty(userId))
+        {
+            return BadRequest("campaignId, adId, and userId are required");
+        }
+
         _logger.LogInformation("User clicked on the ad: campaign={CampaignId} ad={AdId} user={UserId}", campaignId, adId, userId);
 
-        // Record click metric with labels (campaign, ad)
-        try
+        var clickEvent = new AdClickEvent
         {
-            var clicks = Metrics.CreateCounter("ad_clicks_total", "Total ad clicks", new CounterConfiguration { LabelNames = new[] { "campaign", "ad" } });
-            clicks.WithLabels(campaignId?.ToString() ?? "unknown", adId?.ToString() ?? "unknown").Inc();
-        }
-        catch
-        {
-            // don't let metrics errors surface to caller
-        }
+            CampaignId = campaignId.Value,
+            AdId = adId.Value,
+            UserId = userId,
+            PlacementId = Request.Query["placementId"].ToString() ?? string.Empty,
+            RequestId = Guid.NewGuid().ToString(),
+            ClickValue = 0m,
+            SessionId = Request.Headers["X-Session-Id"].ToString(),
+            TimestampUtc = DateTime.UtcNow
+        };
 
-        // In a real system, we would validate the campaign/ad, record the click event to Kafka or DB,
-        // and possibly trigger post-click logic (conversion tracking, attribution, etc).
-
-        // Tim Grant - I will need to add functionality which deducts more money from the campaign budget when the user
-        //clicks on an ad. 
+        await _adEventService.PublishClickAsync(clickEvent);
         return Ok("Click recorded");
     }
 

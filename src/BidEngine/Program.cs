@@ -52,6 +52,9 @@ builder.Services.AddScoped<CampaignReadCacheService>();
 builder.Services.AddScoped<VideoEmbeddingService>();
 builder.Services.AddScoped<SemanticQueryService>();
 builder.Services.AddScoped<BudgetService>();
+builder.Services.AddScoped<IAdAnalyticsRepository, AdAnalyticsRepository>();
+builder.Services.AddScoped<IEventPublisher, DbEventPublisher>();
+builder.Services.AddScoped<IAdEventService, AdEventService>();
 
 // Register bidding strategies
 builder.Services.AddScoped<HighestCpmStrategy>();

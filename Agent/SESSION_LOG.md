@@ -112,6 +112,28 @@ Execute the service boundary cleanup refactor in BidEngine to split the monolith
 ---
 
 ## Date
+2026-05-01
+
+## Goal
+Implement the attribution-ready click/impression event pipeline and persist campaign analytics.
+
+## Actions
+- Added shared event models, event publisher/repository services, and EF Core event tables.
+- Integrated impression event capture into the bid flow and click event capture into the click endpoint.
+- Added `AdminMetricsController` for campaign analytics queries.
+- Registered new services in DI and validated the change with unit tests.
+
+## Findings
+- The new attribution pipeline compiles, the DB model is extended, and both the bid and click flows now create structured events.
+- `dotnet test tests/BidEngine.Tests/BidEngine.Tests.csproj` passed successfully.
+
+## Next Steps
+- Add end-to-end integration tests for the event pipeline.
+- Create a database migration for the new event tables and refine admin analytics return values.
+
+---
+
+## Date
 2026-04-30
 
 ## Goal
