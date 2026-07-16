@@ -15,7 +15,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     {}
 
     public DbSet<Campaign> Campaigns => Set<Campaign>();
-    public DbSet<Ad> Ads => Set<Ad>();
+    public DbSet<Ad> Ads => Set<Ad>(); 
     public DbSet<TargetingRule> TargetingRules => Set<TargetingRule>();
     public DbSet<Video> Videos => Set<Video>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

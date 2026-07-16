@@ -32,5 +32,11 @@
   <ItemGroup>
     <ProjectReference Include="..\Shared\BidEngine.Shared.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <None Update="model\**">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>
