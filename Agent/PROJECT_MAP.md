@@ -2,6 +2,8 @@
 
 This document is a deep, read-only repository map based on current implementation state.
 
+_Last verified: 2026-07-16 — runtime confirmed working end-to-end (see `Agent/CURRENT_ISSUES.md`). Sections 2 and 3 below predate the auth/campaign-management/experimentation/attribution work merged 2026-04-30/05-01 and have been amended in place; the rest of this document was written after that work and is still accurate._
+
 ## 1. What this project appears to do
 
 `ad_simulator` is a practical ad-tech simulation centered on a .NET bid engine and a lightweight Node frontend.
@@ -30,10 +32,17 @@ High-level runtime architecture:
      - `BidController` for bid + click endpoints.
      - `AdminController` for embedding/seed operations.
      - `VideosController` for video listing/detail.
-   - Core services:
-     - `BidSelector`: auction logic + semantic route.
-     - `CampaignCache`: Redis + DB cache and vector operations.
+     - `AuthController` for login/token issuance (JWT + ASP.NET Identity).
+     - `AdminCampaignsController` / `AdminAdsController` / `AdminTargetingController` for authenticated CRUD over campaigns, ads, and targeting rules (policy: `AdminOnly`).
+     - `AdminMetricsController` for campaign analytics queries (CTR/spend rollups from the event pipeline).
+   - Core services (post service-boundary-cleanup refactor):
+     - `BidSelector`: delegates to an `IBiddingStrategy` (`HighestCpmStrategy`, `SemanticOnlyStrategy`, `HybridWeightedStrategy`, selected via `BiddingStrategyOptions` in config) plus the online A/B experiment layer (deterministic bucketing, exposure logging, Prometheus metrics).
+     - `CampaignReadCacheService`: campaign read/cache (Redis + DB), split out of the old monolithic `CampaignCache`.
+     - `VideoEmbeddingService` / `SemanticQueryService`: vector embedding generation and semantic ad search, also split out of `CampaignCache`.
      - `BudgetService`: spend deduction and cache invalidation.
+     - `CampaignManagementService`: EF Core CRUD + audit logging for the admin campaign API.
+     - `JwtService` / `AuthService` / `AuditService` / `DatabaseInitializer`: auth infrastructure (Identity, JWT issuance, audit trail, seed admin user on boot).
+     - Attribution pipeline: an event publisher/repository pair persists `AdEventLog` (raw events) and `AdEventAggregate` (daily campaign/ad rollups, including experiment/variation dimensions) for both impressions (bid path) and clicks (click path).
 
 3. **Data layer**
    - PostgreSQL (`pgvector/pg15` image) for relational entities and embeddings.
@@ -97,11 +106,14 @@ Primary entry points:
   - Wires DI, DbContext, Redis, controllers, metrics endpoint, optional `--seed-vectors` mode, and startup migration.
 
 - **Backend HTTP entrypoints**
-  - `POST /api/bid` -> bid evaluation.
+  - `POST /api/bid` -> bid evaluation (auction strategy + A/B experiment assignment + impression event).
   - `GET /api/bid/test` -> simple test endpoint.
-  - `GET /api/bid/User_Click_Event` -> click metric recording.
-  - `POST /api/admin/seed-vectors*` -> embedding generation.
+  - `GET /api/bid/User_Click_Event` -> click metric recording + click event.
+  - `POST /api/admin/seed-vectors*` -> embedding generation (unauthenticated — see security audit).
   - `GET /api/videos`, `GET /api/videos/{id}` -> video browsing.
+  - `POST /api/auth/login` -> JWT issuance.
+  - `GET/POST/PUT/DELETE /api/admin/campaigns`, `/api/admin/ads`, `/api/admin/targeting` -> authenticated campaign/ad/targeting CRUD (`AdminOnly` policy).
+  - `GET /api/admin/metrics/*` -> campaign analytics (CTR/spend) from the attribution pipeline.
 
 - **Frontend process entry**
   - `FrontEnd/index.js`
@@ -198,6 +210,9 @@ Areas that look legacy, inconsistent, or risky:
 
 - **Config drift**
   - Compose injects `AwsConnection`, while runtime reads `DefaultConnection`.
+
+- **EF Core migration drift (fixed 2026-07-16, but the pattern can recur)**
+  - New `DbSet<T>` properties/entities were added to `AppDbContext` (the attribution event tables) in the 2026-05-01 session without a corresponding `dotnet ef migrations add`. This is invisible to `dotnet build`/`dotnet test` and only surfaces when the container actually boots against Postgres — `db.Database.Migrate()` throws `PendingModelChangesWarning` as an unhandled exception and the container crash-loops. This had been silently breaking the entire stack since 2026-05-01 until caught in this session's audit. See `Agent/CURRENT_ISSUES.md` for the fix and a recommended CI guard against recurrence.
 
 - **Secret hygiene risk**
   - Sensitive DB credentials present in config surfaces (`appsettings.json` and local `.env` values).

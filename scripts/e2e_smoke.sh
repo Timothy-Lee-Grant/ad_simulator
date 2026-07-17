@@ -59,8 +59,8 @@ sleep 1
 echo "Checking ad_clicks_total metric on bid engine..."
 metric_output=$(curl -sSf "$BASE_URL_BIDENGINE/metrics")
 
-# Extract numeric values for ad_clicks_total
-max=$(echo "$metric_output" | awk '/^ad_clicks_total\{/ {print $2}' | awk 'BEGIN{m=0} {if($1+0>m) m=$1} END{print m+0}')
+# Extract numeric values for ad_clicks_total (metric may or may not carry labels)
+max=$(echo "$metric_output" | awk '/^ad_clicks_total(\{|[ \t])/ {print $NF}' | awk 'BEGIN{m=0} {if($1+0>m) m=$1} END{print m+0}')
 
 # --- FIX FOR LINE 57 ---
 # We use single quotes for the awk body so the shell doesn't see the parentheses.

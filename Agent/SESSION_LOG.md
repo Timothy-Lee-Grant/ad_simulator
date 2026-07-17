@@ -259,3 +259,31 @@ Integrate and verify the online A/B experimentation framework for BidEngine.
 - Add experiment outcome logging and persistence.
 - Add targeted unit tests for experiment assignment and experiment service behavior.
 
+---
+
+## Date
+2026-07-16
+
+## Goal
+Recovery audit after a long gap (Timothy returned to the project without remembering its exact state). Verify the actual current state of the system from scratch, fix any real errors found, and refresh documentation and forward-looking recommendations.
+
+## Actions
+- Started Docker Desktop and brought up the full compose stack (`postgres`, `redis`, `prometheus`, `grafana`, `bid-engine`, `frontend`) from a cold build.
+- Found `bid-engine` was crash-looping on every boot with an unhandled `PendingModelChangesWarning` from EF Core — the attribution event tables (`AdEventLog`/`AdEventAggregate`, added 2026-05-01) were never captured in a migration, so `db.Database.Migrate()` threw on startup. This meant the whole backend (and therefore the frontend, which depends on it) had been non-functional since that session.
+- Installed `dotnet-ef` locally and generated the missing migration (`20260717021126_AddAdEventTables`), then rebuilt and restarted `bid-engine`. Verified it boots clean and both tables are created.
+- Ran `scripts/e2e_smoke.sh`; it reported the click metric as stuck at 0. Root-caused to a stale `awk` filter in the script expecting a labeled Prometheus metric (`ad_clicks_total{...}`) when the real metric is unlabeled (`ad_clicks_total 1`). Fixed the regex; confirmed the script now passes reliably across repeated runs.
+- Found and fixed an EF Core package version conflict (`Microsoft.AspNetCore.Identity.EntityFrameworkCore` pinned to `9.0.0` vs `Npgsql.EntityFrameworkCore.PostgreSQL`/`Design` at `9.0.2`) that had been producing a build warning since at least 2026-04-30. Bumped Identity package to `9.0.2` in both `BidEngine.csproj` and `BidEngine.Shared.csproj`; confirmed the conflict warning is gone.
+- Removed the leftover obsolete `version: '3.8'` key from `docker-compose.kafka.yml` (the main compose file had already been cleaned up previously).
+- Re-ran `dotnet test` (39 passed, 3 skipped, 0 failed) and the smoke test multiple times after each fix to confirm no regressions.
+- Refreshed `Agent/CURRENT_ISSUES.md` with the verified findings above.
+
+## Findings
+- The project was fully broken end-to-end since 2026-05-01 due to the missing migration — this is the kind of bug that's invisible in `dotnet build`/`dotnet test` (both pass fine) and only shows up when you actually boot the container against a real Postgres instance. Worth remembering: green tests and green build are not proof the app runs.
+- Observed the previously-documented "click counter is fire-and-forget and can silently drop" risk (`Agent/PROJECT_MAP.md` §9) reproduce live: right after a fresh `bid-engine` restart, one click was dropped before the container had warmed up. Not touched — it's a known, already-tracked risk, not a regression from this session.
+- All previously-documented security findings (`Agent/SECURITY_AUDIT.md`) are still present and unaddressed; none were touched this session since remediating them (secret rotation, adding auth) is a deliberate roadmap decision, not a "fix the broken thing" task.
+
+## Next Steps
+- Add a CI/build-time check that fails when `AppDbContext`'s model has pending changes not captured in a migration, so this exact failure mode can't silently recur.
+- Decide whether to act on the security/secrets roadmap items now or keep deferring them; they're the single biggest gap between "working demo" and "something you'd show in an interview as production-minded."
+- See updated `Agent/CURRENT_ISSUES.md` and `Agent/ROADMAP.md` for the full current-state picture and prioritized next moves.
+
